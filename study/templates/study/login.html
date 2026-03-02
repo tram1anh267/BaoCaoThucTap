@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng nhập – EduFlow AI</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'study/css/auth.css' %}" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="auth-bg">
+      <div class="auth-card">
+        <div class="auth-logo">EduFlow AI</div>
+        <h1 class="auth-title">Chào mừng trở lại 👋</h1>
+        <p class="auth-subtitle">Đăng nhập để tiếp tục học tập thông minh</p>
+
+        {% if messages %} {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %} {% endif %}
+
+        <form method="POST" action="{% url 'login' %}" class="auth-form">
+          {% csrf_token %}
+          <div class="form-group">
+            <label>Tên đăng nhập</label>
+            {{ form.username }}
+          </div>
+          <div class="form-group">
+            <label>Mật khẩu</label>
+            {{ form.password }}
+          </div>
+          {% if form.non_field_errors %}
+          <div class="alert alert-error">{{ form.non_field_errors.0 }}</div>
+          {% endif %}
+          <button type="submit" class="btn-auth">Đăng nhập</button>
+        </form>
+
+        <p class="auth-switch">
+          Chưa có tài khoản? <a href="{% url 'register' %}">Đăng ký ngay</a>
+        </p>
+      </div>
+
+      <!-- Decorative bubbles -->
+      <div class="bubble b1"></div>
+      <div class="bubble b2"></div>
+      <div class="bubble b3"></div>
+    </div>
+  </body>
+</html>
