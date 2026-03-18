@@ -6,19 +6,14 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.conf import settings
-from .services import extract_text, classify_text, index_document, get_answer, generate_mock_exam, generate_exam_json
-from .models import Subject, Document, ChatMessage, ExamResult, ExamSession
-from .ml_services import generate_weakness_report, summarize_document, generate_oral_question, grade_oral_answer
+from .services import extract_text, classify_text, index_document, get_answer, generate_mock_exam, generate_exam_json, parse_exam_from_text, generate_weakness_exam_json
+from .models import Subject, Document, ChatMessage, ExamResult, ExamSession, UploadedExam
+from .ml_services import generate_weakness_report, summarize_document
 from .forms import RegisterForm, LoginForm, SubjectForm
 import os
 import shutil
 import json
 from django.utils import timezone
-
-
-# ─────────────────────────────────────────────────────────
-# AUTH VIEWS
-# ─────────────────────────────────────────────────────────
 
 def register_view(request):
     if request.user.is_authenticated:
@@ -156,13 +151,31 @@ def upload_file(request):
             })
 
             # Save to DB
-            Document.objects.create(
+            doc = Document.objects.create(
                 subject=subject,
                 owner=request.user,
                 filename=filename,
                 category=category,
                 file_path=final_path,
             )
+
+            # Nếu là đề thi → auto-parse thành JSON chuẩn (preprocessing layer)
+            if category == 'PastExam':
+                try:
+                    questions = parse_exam_from_text(text, subject.name)
+                    display_name = os.path.splitext(filename)[0]  # bỏ extension
+                    UploadedExam.objects.create(
+                        document=doc,
+                        subject=subject,
+                        owner=request.user,
+                        display_name=display_name,
+                        questions_json=json.dumps(questions, ensure_ascii=False),
+                        total_questions=len(questions),
+                        parse_status='done' if questions else 'failed',
+                    )
+                    print(f"[upload] Parsed PastExam: {display_name} → {len(questions)} câu")
+                except Exception as ex:
+                    print(f"[upload] PastExam parse error: {ex}")
 
             return JsonResponse({
                 'status': 'success',
@@ -271,33 +284,85 @@ def documents_list(request, subject_id):
 
 @login_required
 def start_exam_session(request, subject_id):
-    """Tạo phiên thi thử mới, sinh đề JSON từ AI."""
+    """
+    Tạo phiên thi thử mới.
+    
+    Modes:
+    - mode=new (default): AI sinh đề mới từ tài liệu.
+    - mode=retake&exam_id=<id>: Thi lại y chang đề đã upload (UploadedExam).
+    """
     subject = get_object_or_404(Subject, id=subject_id, owner=request.user)
-    try:
-        num_q = int(request.GET.get('num', 10))
-        num_q = max(5, min(num_q, 20))  # giới hạn 5-20 câu
-        questions = generate_exam_json(subject.name, num_q, str(request.user.id))
-        if not questions:
-            return JsonResponse({'status': 'error', 'message': 'AI không sinh được đề thi. Thử lại sau.'})
+    mode = request.GET.get('mode', 'new')
 
-        session = ExamSession.objects.create(
-            user=request.user,
-            subject=subject,
-            questions_json=json.dumps(questions, ensure_ascii=False),
-            answers_json='[]',
-            total_questions=len(questions),
-        )
-        # Trả về câu hỏi KHÔNG kèm đáp án cho client
-        safe_questions = [
-            {'question': q['question'], 'options': q['options']}
-            for q in questions
-        ]
-        return JsonResponse({
-            'status': 'success',
-            'session_id': session.id,
-            'questions': safe_questions,
-            'total': len(questions),
-        })
+    try:
+        if mode == 'retake':
+            # ── Chế độ thi lại đề đã upload ──────────────────────────────
+            exam_id = request.GET.get('exam_id')
+            if not exam_id:
+                return JsonResponse({'status': 'error', 'message': 'Thiếu exam_id để thi lại.'})
+
+            uploaded_exam = get_object_or_404(
+                UploadedExam,
+                id=exam_id,
+                subject=subject,
+                owner=request.user,
+                parse_status='done',
+            )
+            questions = json.loads(uploaded_exam.questions_json)
+            if not questions:
+                return JsonResponse({'status': 'error', 'message': 'Đề thi này chưa được parse hoặc không có câu hỏi.'})
+
+            session = ExamSession.objects.create(
+                user=request.user,
+                subject=subject,
+                questions_json=uploaded_exam.questions_json,
+                answers_json='[]',
+                total_questions=len(questions),
+            )
+            safe_questions = [
+                {'question': q['question'], 'options': q['options']}
+                for q in questions
+            ]
+            return JsonResponse({
+                'status': 'success',
+                'mode': 'retake',
+                'exam_name': uploaded_exam.display_name,
+                'exam_source': f'📜 Thi lại đề đã upload: {uploaded_exam.display_name}',
+                'session_id': session.id,
+                'questions': safe_questions,
+                'total': len(questions),
+            })
+
+        else:
+            # ── Chế độ sinh đề mới từ AI ──────────────────────────────────
+            num_q = int(request.GET.get('num', 10))
+            num_q = max(5, min(num_q, 20))  # giới hạn 5-20 câu
+            questions = generate_exam_json(subject.name, num_q, str(request.user.id))
+            if not questions:
+                return JsonResponse({'status': 'error', 'message': 'AI không sinh được đề thi. Thử lại sau.'})
+
+            session = ExamSession.objects.create(
+                user=request.user,
+                subject=subject,
+                questions_json=json.dumps(questions, ensure_ascii=False),
+                answers_json='[]',
+                total_questions=len(questions),
+            )
+            safe_questions = [
+                {'question': q['question'], 'options': q['options']}
+                for q in questions
+            ]
+            # Lấy source từ câu hỏi đầu tiên
+            exam_source = questions[0].get('source', '🤖 AI sinh đề mới') if questions else ''
+            return JsonResponse({
+                'status': 'success',
+                'mode': 'new',
+                'exam_source': exam_source,
+                'session_id': session.id,
+                'questions': safe_questions,
+                'total': len(questions),
+            })
+
     except Exception as e:
         print(f"Start exam error: {e}")
         return JsonResponse({'status': 'error', 'message': str(e)})
@@ -369,6 +434,21 @@ def exam_history(request, subject_id):
     return JsonResponse({'history': data})
 
 
+@login_required
+def uploaded_exams_list(request, subject_id):
+    """Danh sách đề thi đã upload & parse cho môn học."""
+    subject = get_object_or_404(Subject, id=subject_id, owner=request.user)
+    exams = UploadedExam.objects.filter(subject=subject, owner=request.user).order_by('-created_at')
+    data = [{
+        'id': e.id,
+        'name': e.display_name,            # JS reads: e.name
+        'num_questions': e.total_questions, # JS reads: e.num_questions
+        'status': e.parse_status,           # JS reads: e.status
+        'created_at': e.created_at.strftime('%d/%m/%Y %H:%M'),
+    } for e in exams]
+    return JsonResponse({'exams': data})   # JS reads: data.exams
+
+
 # ─────────────────────────────────────────────────────────
 # ML – Phân tích điểm yếu
 # ─────────────────────────────────────────────────────────
@@ -384,6 +464,53 @@ def weakness_analysis(request, subject_id=None):
         return JsonResponse(report)
     except Exception as e:
         print(f"Weakness analysis error: {e}")
+        return JsonResponse({'status': 'error', 'message': str(e)})
+
+
+@login_required
+@csrf_exempt
+def practice_weakness(request, subject_id):
+    """Sinh bài luyện tập dựa trên nhóm câu hỏi điểm yếu (ML cluster)."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+
+    subject = get_object_or_404(Subject, id=subject_id, owner=request.user)
+    try:
+        data = json.loads(request.body)
+        topic_name = data.get('topic_name', 'Chủ đề hỗn hợp')
+        wrong_questions = data.get('questions', [])
+        
+        if not wrong_questions:
+            return JsonResponse({'status': 'error', 'message': 'Không có dữ liệu câu hỏi lỗi để luyện tập.'})
+
+        questions = generate_weakness_exam_json(subject.name, topic_name, wrong_questions, num_questions=5)
+        
+        if not questions:
+            return JsonResponse({'status': 'error', 'message': 'Không thể sinh câu hỏi luyện tập. Thử lại sau.'})
+
+        session = ExamSession.objects.create(
+            user=request.user,
+            subject=subject,
+            questions_json=json.dumps(questions, ensure_ascii=False),
+            answers_json='[]',
+            total_questions=len(questions),
+        )
+        safe_questions = [
+            {'question': q['question'], 'options': q['options']}
+            for q in questions
+        ]
+        
+        return JsonResponse({
+            'status': 'success',
+            'mode': 'practice',
+            'exam_source': f'🎯 Ôn tập điểm yếu: {topic_name}',
+            'session_id': session.id,
+            'questions': safe_questions,
+            'total': len(questions),
+        })
+
+    except Exception as e:
+        print(f"Practice weakness error: {e}")
         return JsonResponse({'status': 'error', 'message': str(e)})
 
 
@@ -414,57 +541,134 @@ def summarize_doc_view(request, doc_id):
 
 
 # ─────────────────────────────────────────────────────────
-# Oral Exam – Vấn đáp AI + Voice
+# DASHBOARD STATS – Dữ liệu cho Charts
 # ─────────────────────────────────────────────────────────
 
 @login_required
-def oral_get_question(request, subject_id):
-    """Sinh câu hỏi vấn đáp cho môn học."""
-    subject = get_object_or_404(Subject, id=subject_id, owner=request.user)
-    try:
-        # Lấy context từ tài liệu nếu có
-        docs = Document.objects.filter(subject=subject, owner=request.user)[:3]
-        context = ""
-        for doc in docs:
-            try:
-                fp = doc.file_path
-                if not os.path.exists(fp):
-                    fp = os.path.join(settings.MEDIA_ROOT, doc.file_path)
-                context += extract_text(fp)[:1000] + "\n"
-            except Exception:
-                pass
+def dashboard_stats(request):
+    """
+    Trả về tất cả data cần thiết để render Dashboard Charts:
+    - activity_days: số buổi học/ngày (14 ngày gần nhất)
+    - score_trend: điểm thi theo thời gian, chia theo môn
+    - docs_by_category: số tài liệu theo loại
+    - subject_avg_scores: điểm trung bình mỗi môn
+    - overall: tổng hợp nhanh
+    """
+    from datetime import timedelta
+    from django.utils import timezone
+    from django.db.models import Avg, Count
+    from django.db.models.functions import TruncDate
 
-        data = generate_oral_question(subject.name, context)
-        if not data:
-            return JsonResponse({'status': 'error', 'message': 'AI không sinh được câu hỏi.'})
+    user = request.user
+    now = timezone.now()
+    days_14 = now - timedelta(days=14)
+    days_30 = now - timedelta(days=30)
 
-        return JsonResponse({
-            'status': 'success',
-            'question': data['question'],
-            'reference_answer': data['reference_answer'],
-            'keywords': data.get('keywords', []),
+    # ── 1. Activity heatmap: số phiên thi + chat mỗi ngày (14 ngày) ──
+    exam_by_day = (
+        ExamSession.objects
+        .filter(user=user, started_at__gte=days_14, is_submitted=True)
+        .annotate(day=TruncDate('started_at'))
+        .values('day')
+        .annotate(cnt=Count('id'))
+    )
+    chat_by_day = (
+        ChatMessage.objects
+        .filter(user=user, role='user', created_at__gte=days_14)
+        .annotate(day=TruncDate('created_at'))
+        .values('day')
+        .annotate(cnt=Count('id'))
+    )
+    activity_map = {}
+    for r in exam_by_day:
+        key = r['day'].strftime('%Y-%m-%d')
+        activity_map[key] = activity_map.get(key, 0) + r['cnt']
+    for r in chat_by_day:
+        key = r['day'].strftime('%Y-%m-%d')
+        activity_map[key] = activity_map.get(key, 0) + r['cnt']
+
+    activity_days = []
+    for i in range(14):
+        day = (now - timedelta(days=13-i)).date()
+        key = day.strftime('%Y-%m-%d')
+        activity_days.append({
+            'date': key,
+            'label': day.strftime('%d/%m'),
+            'count': activity_map.get(key, 0),
         })
-    except Exception as e:
-        print(f"Oral question error: {e}")
-        return JsonResponse({'status': 'error', 'message': str(e)})
 
+    # ── 2. Score trend: điểm theo ngày (30 ngày), group by môn ──
+    sessions = (
+        ExamSession.objects
+        .filter(user=user, is_submitted=True, submitted_at__gte=days_30, score__isnull=False)
+        .select_related('subject')
+        .order_by('submitted_at')
+        .values('subject__name', 'subject__icon', 'score', 'submitted_at')
+    )
+    score_by_subject = {}
+    for s in sessions:
+        name = f"{s['subject__icon']} {s['subject__name']}"
+        if name not in score_by_subject:
+            score_by_subject[name] = []
+        score_by_subject[name].append({
+            'date': s['submitted_at'].strftime('%d/%m'),
+            'score': round(s['score'], 1),
+        })
 
-@login_required
-def oral_grade(request):
-    """Chấm điểm câu trả lời vấn đáp bằng ML + AI."""
-    try:
-        body = json.loads(request.body)
-        question = body.get('question', '')
-        student_answer = body.get('student_answer', '')
-        reference_answer = body.get('reference_answer', '')
-        keywords = body.get('keywords', [])
+    # ── 3. Documents by category ──
+    doc_cats = (
+        Document.objects
+        .filter(owner=user)
+        .values('category')
+        .annotate(cnt=Count('id'))
+        .order_by('-cnt')
+    )
+    cat_labels_vi = {
+        'Theory': 'Lý thuyết', 'Slide': 'Slide',
+        'Textbook': 'Giáo trình', 'Examples': 'Ví dụ',
+        'Exercises': 'Bài tập', 'PastExam': 'Đề thi', 'Other': 'Khác',
+    }
+    docs_by_category = [
+        {'category': cat_labels_vi.get(d['category'], d['category']), 'count': d['cnt']}
+        for d in doc_cats
+    ]
 
-        if not student_answer.strip():
-            return JsonResponse({'status': 'error', 'message': 'Chưa có câu trả lời.'})
+    # ── 4. Subject avg scores ──
+    subject_avgs = (
+        ExamSession.objects
+        .filter(user=user, is_submitted=True, score__isnull=False)
+        .values('subject__name', 'subject__icon')
+        .annotate(avg_score=Avg('score'), total=Count('id'))
+        .order_by('-avg_score')
+    )
+    subject_avg_scores = [
+        {
+            'subject': f"{s['subject__icon']} {s['subject__name']}",
+            'avg': round(s['avg_score'], 1),
+            'total': s['total'],
+        }
+        for s in subject_avgs
+    ]
 
-        result = grade_oral_answer(question, student_answer, reference_answer, keywords)
-        result['status'] = 'success'
-        return JsonResponse(result)
-    except Exception as e:
-        print(f"Oral grade error: {e}")
-        return JsonResponse({'status': 'error', 'message': str(e)})
+    # ── 5. Overall stats ──
+    total_sessions = ExamSession.objects.filter(user=user, is_submitted=True).count()
+    avg_score_all = ExamSession.objects.filter(
+        user=user, is_submitted=True, score__isnull=False
+    ).aggregate(avg=Avg('score'))['avg'] or 0
+    best_score = ExamSession.objects.filter(
+        user=user, is_submitted=True, score__isnull=False
+    ).order_by('-score').values_list('score', flat=True).first() or 0
+    active_days = len([d for d in activity_days if d['count'] > 0])
+
+    return JsonResponse({
+        'activity_days': activity_days,
+        'score_trend': score_by_subject,
+        'docs_by_category': docs_by_category,
+        'subject_avg_scores': subject_avg_scores,
+        'overall': {
+            'total_sessions': total_sessions,
+            'avg_score': round(avg_score_all, 1),
+            'best_score': round(best_score, 1),
+            'active_days_14': active_days,
+        },
+    })

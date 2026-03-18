@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EduFlow AI – Smart Study Assistant</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'study/css/style.css' %}" />
+    <link rel="stylesheet" href="{% static 'study/css/dashboard.css' %}" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- ── Sidebar ── -->
+      <aside class="sidebar">
+        <div class="logo">EduFlow AI</div>
+
+        <div class="user-info">
+          <div class="avatar">{{ initials }}</div>
+          <div>
+            <div class="user-name">{{ full_name }}</div>
+            <div class="user-role">Sinh viên</div>
+          </div>
+        </div>
+
+        <nav>
+          <div class="nav-item active" onclick="showSection('subjects', this)">
+            🏠 Dashboard
+          </div>
+          <div class="nav-item" onclick="showSection('upload', this)">
+            📤 Upload Tài Liệu
+          </div>
+          <div class="nav-item" onclick="showSection('quiz', this)">
+            📝 Thi Thử Online
+          </div>
+          <div class="nav-item" onclick="showSection('history', this)">
+            💬 Lịch Sử Chat
+          </div>
+          <div class="nav-item" onclick="showSection('ml', this)">
+            🧠 Phân tích ML
+          </div>
+          <div class="nav-item" onclick="showSection('summary', this)">
+            📝 Tóm tắt AI
+          </div>
+        </nav>
+
+        <div class="stat-block">
+          <div class="stat-item">
+            <span class="stat-num">{{ total_docs }}</span>
+            <span class="stat-label">Tài liệu</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num">{{ total_chats }}</span>
+            <span class="stat-label">Câu hỏi</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num">{{ total_exams }}</span>
+            <span class="stat-label">Đề thi</span>
+          </div>
+        </div>
+
+        <div class="upgrade-card">
+          <strong>EduFlow Pro</strong>
+          <p>AI ghi nhớ hội thoại & phân tích điểm yếu.</p>
+        </div>
+
+        <a href="{% url 'logout' %}" class="logout-btn">🚪 Đăng xuất</a>
+      </aside>
+
+      <!-- ── Main Content ── -->
+      <main class="main-content">
+        <!-- SECTION: Dashboard -->
+        <section id="section-subjects">
+          <header class="animate-fade-in">
+            <h1>Dashboard 📊</h1>
+            <p class="subtitle">
+              Tổng quan học tập – charts cập nhật theo hoạt động thực tế của
+              bạn.
+            </p>
+          </header>
+
+          <div id="stats-cards" class="stats-grid animate-fade-in">
+            <div class="glass-panel stat-panel">
+              <div class="stat-value" style="color: #8b5cf6" id="stat-sessions">
+                –
+              </div>
+              <div class="stat-desc">🎯 Lần thi thử</div>
+            </div>
+            <div class="glass-panel stat-panel">
+              <div class="stat-value" style="color: #06b6d4" id="stat-avg">
+                –
+              </div>
+              <div class="stat-desc">⭐ Điểm trung bình</div>
+            </div>
+            <div class="glass-panel stat-panel">
+              <div class="stat-value" style="color: #34d399" id="stat-best">
+                –
+              </div>
+              <div class="stat-desc">🏆 Điểm cao nhất</div>
+            </div>
+            <div class="glass-panel stat-panel">
+              <div
+                class="stat-value"
+                style="color: #f59e0b"
+                id="stat-activedays"
+              >
+                –
+              </div>
+              <div class="stat-desc">📅 Ngày học (14 ngày)</div>
+            </div>
+          </div>
+
+          <div class="charts-row animate-fade-in">
+            <div class="glass-panel chart-container">
+              <div class="chart-title">📅 Hoạt động 14 ngày gần nhất</div>
+              <canvas id="activityChart" height="160"></canvas>
+              <div id="activityEmpty" class="chart-empty" style="display: none">
+                Chưa có hoạt động nào được ghi nhận.
+              </div>
+            </div>
+            <div class="glass-panel chart-container">
+              <div class="chart-title">
+                📈 Điểm thi theo thời gian (30 ngày)
+              </div>
+              <canvas id="scoreChart" height="160"></canvas>
+              <div id="scoreEmpty" class="chart-empty" style="display: none">
+                Chưa có bài thi nào được hoàn thành.
+              </div>
+            </div>
+          </div>
+
+          <div class="charts-row animate-fade-in">
+            <div
+              class="glass-panel chart-container"
+              style="display: flex; flex-direction: column; align-items: center"
+            >
+              <div class="chart-title" style="align-self: flex-start">
+                🗂️ Tài liệu theo phân loại
+              </div>
+              <canvas
+                id="docsChart"
+                style="max-height: 200px; max-width: 200px"
+              ></canvas>
+              <div id="docsEmpty" class="chart-empty" style="display: none">
+                Chưa có tài liệu nào.
+              </div>
+            </div>
+            <div class="glass-panel chart-container">
+              <div class="chart-title">🏅 Điểm trung bình theo môn</div>
+              <canvas id="subjectChart" height="180"></canvas>
+              <div id="subjectEmpty" class="chart-empty" style="display: none">
+                Thi thử ít nhất 1 lần để thấy thống kê theo môn.
+              </div>
+            </div>
+          </div>
+
+          <div
+            style="
+              font-size: 0.95rem;
+              font-weight: 700;
+              color: #e2e8f0;
+              margin-bottom: 1rem;
+            "
+          >
+            📚 Môn học của tôi
+          </div>
+          <div class="card-grid animate-fade-in">
+            {% for subject in subjects %}
+            <div
+              class="glass-panel subject-card"
+              onclick="selectSubject({{ subject.id }}, '{{ subject.name }}')"
+            >
+              <div class="icon-box">{{ subject.icon }}</div>
+              <h3>{{ subject.name }}</h3>
+              <p class="card-desc">Quản lý tài liệu và luyện tập với AI.</p>
+              <div class="card-actions">
+                <button
+                  class="btn-primary-sm"
+                  onclick="event.stopPropagation(); openExam({{ subject.id }}, '{{ subject.name }}')"
+                >
+                  📝 Sinh đề
+                </button>
+                <button
+                  class="btn-primary-sm"
+                  style="background: linear-gradient(135deg, #059669, #0d9488)"
+                  onclick="event.stopPropagation(); openQuizSection({{ subject.id }}, '{{ subject.name }}')"
+                >
+                  🎯 Thi thử
+                </button>
+                <button
+                  class="btn-danger-sm"
+                  onclick="event.stopPropagation(); deleteSubject({{ subject.id }}, this)"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+            {% endfor %}
+
+            <div
+              class="glass-panel subject-card add-card"
+              onclick="openAddSubjectModal()"
+            >
+              <div class="icon-box">➕</div>
+              <h3>Thêm môn học</h3>
+              <p class="card-desc">Tạo môn học mới cho tài khoản của bạn.</p>
+            </div>
+          </div>
+
+          <section
+            id="exam-section"
+            class="animate-fade-in glass-panel"
+            style="display: none; margin-top: 3rem; padding: 2rem"
+          >
+            <h2 id="exam-title">Đề thi ôn tập</h2>
+            <div id="exam-content" class="content-box"></div>
+            <button
+              class="btn-primary"
+              onclick="
+                document.getElementById('exam-section').style.display = 'none'
+              "
+              style="margin-top: 1rem"
+            >
+              ✕ Đóng
+            </button>
+          </section>
+        </section>
+
+        <!-- SECTION: Upload -->
+        <section id="section-upload" style="display: none">
+          <header class="animate-fade-in">
+            <h1>Upload Tài Liệu 📤</h1>
+            <p class="subtitle">
+              Tải lên tài liệu – AI tự phân loại hoặc bạn chọn thủ công.
+            </p>
+          </header>
+          <div class="glass-panel upload-box animate-fade-in">
+            <div class="form-group-inline">
+              <label>Chọn môn học:</label>
+              <select id="uploadSubjectSelect" class="select-input">
+                {% for subject in subjects %}
+                <option value="{{ subject.id }}">
+                  {{ subject.icon }} {{ subject.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="category-select-wrapper" style="margin: 1rem 0">
+              <label
+                style="
+                  color: var(--text-muted);
+                  font-size: 0.85rem;
+                  margin-bottom: 0.4rem;
+                  display: block;
+                "
+                >📁 Phân loại tài liệu (AI tự động hoặc chọn tay):</label
+              >
+              <div class="category-chips" id="categoryChips">
+                <div class="chip active" data-cat="">🤖 AI tự phân loại</div>
+                <div class="chip" data-cat="Theory">📖 Lý thuyết</div>
+                <div class="chip" data-cat="Slide">🖥️ Slide bài giảng</div>
+                <div class="chip" data-cat="Textbook">📗 Giáo trình</div>
+                <div class="chip" data-cat="Examples">💡 Ví dụ minh họa</div>
+                <div class="chip" data-cat="Exercises">✏️ Bài tập</div>
+                <div class="chip" data-cat="PastExam">📜 Đề thi các năm</div>
+                <div class="chip" data-cat="Other">📎 Khác</div>
+              </div>
+            </div>
+
+            <div
+              class="drop-zone"
+              id="dropZone"
+              onclick="document.getElementById('fileInput').click()"
+            >
+              <div class="drop-icon">☁️</div>
+              <p>Kéo thả file vào đây hoặc <strong>click để chọn</strong></p>
+              <p class="drop-hint">Hỗ trợ: PDF, JPG, PNG (tối đa 20MB)</p>
+              <input
+                type="file"
+                id="fileInput"
+                hidden
+                onchange="handleUpload(this)"
+                accept=".pdf,.jpg,.jpeg,.png,.bmp"
+              />
+            </div>
+            <div id="upload-status" style="margin-top: 1rem"></div>
+
+            <div style="margin-top: 2rem">
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 1rem;
+                  margin-bottom: 1rem;
+                "
+              >
+                <h3 style="margin: 0">📂 Tài liệu đã upload</h3>
+                <select
+                  id="docsSubjectFilter"
+                  class="select-input"
+                  style="max-width: 220px"
+                  onchange="loadDocuments(this.value)"
+                >
+                  <option value="">-- Chọn môn --</option>
+                  {% for subject in subjects %}
+                  <option value="{{ subject.id }}">
+                    {{ subject.icon }} {{ subject.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div id="docs-by-category"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION: Thi Thử Online -->
+        <section id="section-quiz" style="display: none">
+          <header class="animate-fade-in">
+            <h1>Thi Thử Online 🎯</h1>
+            <p class="subtitle">
+              AI sinh đề mới từ tài liệu, hoặc thi lại đề thi đã upload.
+            </p>
+          </header>
+
+          <div class="glass-panel animate-fade-in" style="padding: 2rem">
+            <div class="form-group-inline" style="margin-bottom: 1.5rem">
+              <label>Chọn môn học:</label>
+              <select
+                id="quizSubjectSelect"
+                class="select-input"
+                onchange="onQuizSubjectChange(this.value)"
+              >
+                {% for subject in subjects %}
+                <option value="{{ subject.id }}" data-name="{{ subject.name }}">
+                  {{ subject.icon }} {{ subject.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div
+              style="
+                display: flex;
+                gap: 0.5rem;
+                margin-bottom: 1.5rem;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+              "
+            >
+              <button
+                id="tabNewExam"
+                class="btn-secondary"
+                style="
+                  border: none;
+                  border-bottom: 2px solid #8b5cf6;
+                  background: none;
+                  color: #a78bfa;
+                  font-weight: 700;
+                "
+                onclick="switchQuizTab('new')"
+              >
+                🤖 Gen đề mới
+              </button>
+              <button
+                id="tabRetake"
+                class="btn-secondary"
+                style="
+                  border: none;
+                  border-bottom: 2px solid transparent;
+                  background: none;
+                "
+                onclick="switchQuizTab('retake')"
+              >
+                📜 Thi lại đề已 upload
+              </button>
+            </div>
+
+            <div id="panelNewExam">
+              <div class="form-group-inline" style="margin-bottom: 1.5rem">
+                <label>Số câu hỏi:</label>
+                <select id="quizNumSelect" class="select-input">
+                  <option value="5">5 câu (~5 phút)</option>
+                  <option value="10" selected>10 câu (~10 phút)</option>
+                  <option value="15">15 câu (~15 phút)</option>
+                  <option value="20">20 câu (~20 phút)</option>
+                </select>
+              </div>
+              <button
+                class="btn-primary"
+                id="startQuizBtn"
+                onclick="startQuiz()"
+                style="width: 100%; font-size: 1rem; padding: 0.9rem"
+              >
+                🚀 Bắt đầu thi thử
+              </button>
+            </div>
+
+            <div id="panelRetake" style="display: none">
+              <div
+                id="uploaded-exams-list"
+                style="margin-bottom: 1rem; min-height: 60px"
+              >
+                <p style="color: var(--text-muted); font-size: 0.9rem">
+                  Đang tải danh sách đề thi...
+                </p>
+              </div>
+            </div>
+
+            <div id="quiz-history-section" style="margin-top: 2rem">
+              <h3>📊 Lịch sử thi thử</h3>
+              <div id="quiz-history-content">
+                <p style="color: var(--text-muted); font-size: 0.9rem">
+                  Chọn môn và bắt đầu thi để xem lịch sử.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION: ML Analysis -->
+        <section id="section-ml" style="display: none">
+          <header class="animate-fade-in">
+            <h1>🧠 Phân tích điểm yếu</h1>
+            <p class="subtitle">
+              Sử dụng ML để phân tích chủ đề nào bạn hay sai nhất.
+            </p>
+          </header>
+          <div class="glass-panel animate-fade-in" style="padding: 2rem">
+            <div class="form-group-inline" style="margin-bottom: 1.5rem">
+              <label>Chọn môn học:</label>
+              <select id="mlSubjectSelect" class="select-input">
+                <option value="">Tất cả các môn</option>
+                {% for subject in subjects %}
+                <option value="{{ subject.id }}">
+                  {{ subject.icon }} {{ subject.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <button
+              class="btn-primary"
+              id="analyzeBtn"
+              onclick="runAnalysis()"
+              style="width: 100%; font-size: 1rem; padding: 0.9rem"
+            >
+              🔬 Bắt đầu phân tích
+            </button>
+            <div id="ml-results" style="margin-top: 2rem"></div>
+          </div>
+        </section>
+
+        <!-- SECTION: summary -->
+        <section id="section-summary" style="display: none">
+          <header class="animate-fade-in">
+            <h1>📝 Tóm tắt tài liệu</h1>
+            <p class="subtitle">AI tóm tắt nội dung tài liệu quan trọng.</p>
+          </header>
+          <div class="glass-panel animate-fade-in" style="padding: 2rem">
+            <div class="form-group-inline" style="margin-bottom: 1rem">
+              <label>Chọn môn học:</label>
+              <select
+                id="sumSubjectSelect"
+                class="select-input"
+                onchange="loadDocsForSummary()"
+              >
+                <option value="">-- Chọn môn --</option>
+                {% for subject in subjects %}
+                <option value="{{ subject.id }}">
+                  {{ subject.icon }} {{ subject.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group-inline" style="margin-bottom: 1.5rem">
+              <label>Chọn tài liệu:</label>
+              <select id="sumDocSelect" class="select-input">
+                <option value="">-- Chọn môn trước --</option>
+              </select>
+            </div>
+            <button
+              class="btn-primary"
+              id="summarizeBtn"
+              onclick="runSummarize()"
+              style="width: 100%; font-size: 1rem; padding: 0.9rem"
+            >
+              🔬 Tóm tắt tài liệu
+            </button>
+            <div id="summary-results" style="margin-top: 2rem"></div>
+          </div>
+        </section>
+
+        <!-- SECTION: History -->
+        <section id="section-history" style="display: none">
+          <header class="animate-fade-in">
+            <h1>Lịch sử Chat 💬</h1>
+            <p class="subtitle">
+              Xem lại các cuộc trò chuyện với AI theo môn học.
+            </p>
+          </header>
+          <div class="glass-panel" style="padding: 2rem">
+            <div class="form-group-inline" style="margin-bottom: 1.5rem">
+              <label>Chọn môn học:</label>
+              <select
+                id="historySubjectSelect"
+                class="select-input"
+                onchange="loadHistory(this.value)"
+              >
+                <option value="">-- Chọn môn --</option>
+                {% for subject in subjects %}
+                <option value="{{ subject.id }}">
+                  {{ subject.icon }} {{ subject.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div
+              id="history-content"
+              class="content-box"
+              style="max-height: 500px; overflow-y: auto"
+            >
+              <p style="color: var(--text-muted)">
+                Chọn môn học để xem lịch sử chat.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- ── Chat Widget ── -->
+      <button
+        class="chat-fab"
+        id="chatFab"
+        onclick="toggleChat()"
+        title="Mở/đóng chat AI"
+      >
+        <span id="chatFabIcon">🤖</span>
+        <span class="chat-fab-badge" id="chatFabBadge" style="display: none"
+          >1</span
+        >
+      </button>
+
+      <div class="glass-panel chat-widget chat-widget--hidden" id="chatWidget">
+        <div class="chat-header">
+          <div style="display: flex; align-items: center; gap: 0.5rem">
+            <span>🤖 EduFlow AI</span>
+            <span
+              id="chatSubjectBadge"
+              class="subject-badge"
+              style="display: none"
+            ></span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.75rem">
+            <span class="status">● Online</span>
+            <button
+              onclick="toggleChat()"
+              style="
+                background: none;
+                border: none;
+                color: #94a3b8;
+                cursor: pointer;
+                font-size: 1.1rem;
+              "
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+        <div id="chat-messages" class="chat-body">
+          <div class="chat-bubble ai">
+            Xin chào <strong>{{ display_name }}</strong>! 👋<br />Hãy chọn một
+            môn học rồi hỏi tôi bất cứ điều gì.
+          </div>
+        </div>
+        <div class="chat-footer">
+          <input
+            type="text"
+            id="chatInput"
+            placeholder="Nhập câu hỏi..."
+            onkeypress="if (event.key === 'Enter') sendMessage();"
+            disabled
+          />
+          <button id="sendBtn" onclick="sendMessage()" disabled>➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Modals ── -->
+    <div
+      id="addSubjectModal"
+      class="modal-overlay"
+      style="display: none"
+      onclick="if (event.target === this) closeModal();"
+    >
+      <div class="modal-card">
+        <h2>Thêm môn học mới</h2>
+        <form id="addSubjectForm" onsubmit="submitAddSubject(event)">
+          {% csrf_token %}
+          <div class="form-group-v" style="margin-top: 1rem">
+            <label>Tên môn học</label>
+            {{ subject_form.name }}
+          </div>
+          <div class="form-group-v" style="margin-top: 1rem">
+            <label>Icon</label>
+            {{ subject_form.icon }}
+          </div>
+          <div style="display: flex; gap: 1rem; margin-top: 1.5rem">
+            <button type="submit" class="btn-primary" style="flex: 1">
+              Thêm môn học
+            </button>
+            <button
+              type="button"
+              class="btn-secondary"
+              onclick="closeModal()"
+              style="flex: 1"
+            >
+              Hủy
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="examSessionModal" style="display: none"></div>
+
+    <script>
+      const csrfToken = "{{ csrf_token }}";
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="{% static 'study/js/dashboard.js' %}"></script>
+  </body>
+</html>

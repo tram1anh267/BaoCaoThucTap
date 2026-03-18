@@ -30,14 +30,18 @@ urlpatterns = [
     path('api/exam-session/submit/<int:session_id>/', views.submit_exam_session, name='submit_exam_session'),
     path('api/exam-session/history/<int:subject_id>/', views.exam_history, name='exam_history'),
 
+    # Uploaded Exams – Đề thi đã upload & parse
+    path('api/uploaded-exams/<int:subject_id>/', views.uploaded_exams_list, name='uploaded_exams_list'),
+
+    # Dashboard Stats – Dữ liệu cho Charts
+    path('api/dashboard/stats/', views.dashboard_stats, name='dashboard_stats'),
+
     # ML – Phân tích điểm yếu
     path('api/weakness/', views.weakness_analysis, name='weakness_all'),
     path('api/weakness/<int:subject_id>/', views.weakness_analysis, name='weakness_subject'),
+    path('api/weakness/practice/<int:subject_id>/', views.practice_weakness, name='weakness_practice'),
 
     # ML – Tóm tắt tài liệu
     path('api/summarize/<int:doc_id>/', views.summarize_doc_view, name='summarize_doc'),
 
-    # Oral Exam – Vấn đáp AI + Voice
-    path('api/oral/question/<int:subject_id>/', views.oral_get_question, name='oral_question'),
-    path('api/oral/grade/', views.oral_grade, name='oral_grade'),
 ]

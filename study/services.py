@@ -150,6 +150,47 @@ def retrieve_context(subject_name: str, user_id: str, query: str) -> str:
     return ""
 
 
+def retrieve_exam_context(subject_name: str, user_id: str, k: int = 8) -> tuple[str, list]:
+    """Tìm kiếm các đoạn tài liệu ngẫu nhiên đa dạng (MMR) để làm ngữ cảnh sinh đề thi."""
+    if not os.path.exists(persist_directory) or not os.listdir(persist_directory):
+        return "", []
+    
+    subject_lower = subject_name.lower()
+    
+    try:
+        vector_db = Chroma(persist_directory=persist_directory, embedding_function=embeddings)
+        
+        # Dùng MMR để đa dạng hóa các đoạn văn bản được chọn
+        docs = vector_db.as_retriever(
+            search_type="mmr",
+            search_kwargs={
+                "filter": {"$and": [{"user_id": user_id}, {"subject": subject_lower}]},
+                "k": k,
+                "fetch_k": 20
+            }
+        ).invoke(f"Kiến thức cốt lõi và quan trọng nhất của môn {subject_name}")
+        
+        if not docs:
+            docs = vector_db.as_retriever(
+                search_kwargs={"filter": {"subject": subject_lower}, "k": k}
+            ).invoke(f"Kiến thức cốt lõi {subject_name}")
+            
+        if docs:
+            context_parts = []
+            sources_used = set()
+            for doc in docs:
+                fname = doc.metadata.get('filename', 'Tài liệu')
+                sources_used.add(fname)
+                context_parts.append(f"--- Nguồn rút trích: {fname} ---\n{doc.page_content}")
+            
+            context = "\n\n".join(context_parts)
+            print(f"Exam RAG found {len(docs)} chunks from {len(sources_used)} files for '{subject_name}'")
+            return context, list(sources_used)
+    except Exception as e:
+        print(f"Exam Context DB Error (skipped): {e}")
+    return "", []
+
+
 # ─────────────────────────────────────────────────────────
 # LLM GENERATION với Prompt Engineering nâng cao
 # ─────────────────────────────────────────────────────────
@@ -164,17 +205,6 @@ def get_answer(subject: str, query: str, history: str = "", user_id: str = "") -
     try:
         # Bước 1: RAG – Retrieve relevant context
         context = retrieve_context(subject, user_id, query)
-
-        # === LOG: Hiện chi tiết trên terminal ===
-        print("\n" + "="*60)
-        print(f"🔍 CÂU HỎI: {query}")
-        print(f"📚 MÔN: {subject} | USER: {user_id}")
-        if context:
-            print(f"✅ RAG CONTEXT ({len(context)} chars):")
-            print(f"   {context[:200]}...")
-        else:
-            print("❌ Không tìm thấy context → dùng kiến thức chung")
-        print("="*60 + "\n")
 
         # Bước 2: Xây dựng prompt (Prompt Engineering)
         prompt_parts = [SYSTEM_PROMPT, "\n\n"]
@@ -243,32 +273,142 @@ def generate_mock_exam(subject: str) -> str:
 import json as _json
 import re as _re
 
+
+def parse_exam_from_text(raw_text: str, subject: str) -> list:
+    """
+    Preprocessing layer: Dùng LLM để chuẩn hóa đề thi từ text thô (bất kỳ định dạng nào)
+    thành JSON chuẩn [{question, options:[A,B,C,D], correct_index:0-3, explanation}].
+    
+    Xử lý được các định dạng lộn xộn: đề thi scan PDF, đề thi gõ tay, v.v.
+    """
+    if not raw_text or not raw_text.strip():
+        return []
+
+    # Giới hạn text để tránh token quá dài
+    truncated = raw_text[:12000]
+
+    prompt = f"""Bạn là chuyên gia phân tích đề thi môn {subject}. Tôi cung cấp TEXT thô của một đề thi (có thể bị OCR lộn xộn, thiếu dấu, định dạng hỗn hợp).
+
+NHIỆM VỤ: Trích xuất TẤT CẢ câu hỏi trắc nghiệm và xác định đáp án đúng.
+
+NGUYÊN TẮc XỬ LÝ:
+1. Mỗi câu hỏi phải có đúng 4 lựa chọn (A, B, C, D).
+2. Về đáp án (correct_index):
+   - Nếu đề THI CÓ đáp án sẵn → dùng đáp án đó (0=A, 1=B, 2=C, 3=D), đặt has_answer=true.
+   - Nếu đề THI KHÔNG CÓ đáp án → dùng KIẾN THỨC CHUYÊN MÔN của bạn về môn {subject} để suy luận đáp án ĐÚNG NHẤT, đặt has_answer=false.
+3. Về giải thích (explanation):
+   - Nếu có trong đề → dùng.
+   - Nếu không có → VIẾT GIẢI THÍCH NGẪN (1-2 câu) tại sao đáp án đó đúng dựa trên kiến thức môn {subject}.
+4. Bỏ qua: tiêu đề đề thi, thông tin trường, tên giáo viên, câu tự luận.
+
+TEXT ĐỀ THI:
+\"\"\"
+{truncated}
+\"\"\"
+
+Trả về CHỈ một mảng JSON hợp lệ (không có markdown, không có ```json):
+[
+  {{
+    "question": "Nội dung câu hỏi?",
+    "options": ["Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D"],
+    "correct_index": 0,
+    "explanation": "Giải thích tại sao đáp án này đúng.",
+    "has_answer": true
+  }}
+]
+Chỉ trả về JSON array, không thêm bất kỳ văn bản nào khác."""
+
+    try:
+        import time
+        from google.genai import types
+        for attempt in range(3):
+            try:
+                response = client.models.generate_content(
+                    model=MODEL_NAME,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        max_output_tokens=8000,
+                        temperature=0.1,  # Low temperature for precise extraction
+                    )
+                )
+                raw = response.text.strip()
+                # Strip markdown fences
+                raw = _re.sub(r'^```[a-z]*\n?', '', raw, flags=_re.MULTILINE)
+                raw = _re.sub(r'```$', '', raw.strip())
+
+                questions = _json.loads(raw.strip())
+
+                validated = []
+                for q in questions:
+                    if all(k in q for k in ['question', 'options', 'correct_index']):
+                        if isinstance(q['options'], list) and len(q['options']) == 4:
+                            if isinstance(q['correct_index'], int) and 0 <= q['correct_index'] <= 3:
+                                validated.append({
+                                    'question': str(q['question']),
+                                    'options': [str(o) for o in q['options']],
+                                    'correct_index': q['correct_index'],
+                                    'explanation': str(q.get('explanation', '')),
+                                    'has_answer': bool(q.get('has_answer', True)),
+                                })
+                print(f"[parse_exam] Extracted {len(validated)} questions from uploaded exam")
+                return validated
+            except Exception as e:
+                if '503' in str(e) or 'UNAVAILABLE' in str(e):
+                    print(f"Gemini 503, retry {attempt+1}/3...")
+                    time.sleep(3)
+                    continue
+                print(f"[parse_exam] Error: {e}")
+                return []
+    except Exception as e:
+        print(f"[parse_exam] Fatal error: {e}")
+    return []
+
+
 def generate_exam_json(subject: str, num_questions: int = 10, user_id: str = "") -> list:
     """
     Sinh đề thi trắc nghiệm dạng JSON để chấm điểm tự động.
-    Trả về list các dict: {question, options:[A,B,C,D], correct_index:0-3, explanation}
+    Trả về list các dict: {question, options:[A,B,C,D], correct_index:0-3, explanation, source}
     """
-    context = retrieve_context(subject, user_id, f"câu hỏi trắc nghiệm {subject}")
+    context, sources = retrieve_exam_context(subject, user_id, k=8)
 
-    context_block = ""
-    if context:
-        context_block = f"\nDựa vào tài liệu sau:\n{context}\n"
+    has_doc_context = bool(context and context.strip())
+    
+    if has_doc_context:
+        sources_str = ", ".join(sources)
+        context_block = f"\nDưới đây là các trích đoạn từ tài liệu sinh viên đã tải lên (trích xuất từ các file: {sources_str}):\n{context}\n"
+        source_label = f"📚 Dựa trên tài liệu môn {subject} đã upload"
+        
+        prompt_instruction = f"""YÊU CẦU NGHIÊM NGẶT:
+Hãy ƯU TIÊN tối đa việc sử dụng các trích đoạn tài liệu trên để tạo ra {num_questions} câu hỏi.
+Nếu nội dung tài liệu dồi dào, BẮT BUỘC toàn bộ câu hỏi phải lấy từ tài liệu.
+Trong trường hợp sinh viên yêu cầu số lượng câu lớn ({num_questions} câu), nhưng nội dung từ tài liệu không cugn cấp đủ ý để làm đủ số lượng trên, bạn mới ĐƯỢC PHÉP mix thêm bằng kiến thức tổng hợp bên ngoài (Gemini AI) của bạn về môn học này để bổ sung cho đủ {num_questions} câu.
 
-    prompt = f"""Bạn là giáo viên ra đề thi trắc nghiệm môn {subject}.
+Trong json trả về, có trường "question_source" để chỉ rõ nguồn gốc câu hỏi (Ví dụ: "Lấy từ file: bai_giang_tuần_1.pdf" hoặc "Kiến thức AI tổng hợp")."""
+
+    else:
+        context_block = ""
+        source_label = "🤖 Kiến thức AI tổng hợp (chưa có tài liệu upload)"
+        prompt_instruction = f"""Sinh viên CHƯA upload tài liệu nào.
+Hãy sử dụng kiến thức AI sâu rộng của bạn về môn {subject} để tạo đủ {num_questions} câu hỏi.
+Trong json trả về, ghi trường "question_source" là "Kiến thức AI tổng hợp" cho tất cả các câu."""
+
+    prompt = f"""Bạn là giảng viên đại học tâm huyết ra đề thi trắc nghiệm môn {subject}.
 {context_block}
-Hãy tạo đúng {num_questions} câu hỏi trắc nghiệm.
+{prompt_instruction}
+
 Trả về CHỈ một mảng JSON hợp lệ (không có markdown, không có ```json), theo đúng định dạng:
 [
   {{
     "question": "Nội dung câu hỏi?",
     "options": ["Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D"],
     "correct_index": 0,
-    "explanation": "Giải thích tại sao đáp án đúng."
+    "explanation": "Giải thích tại sao đáp án lại đúng.",
+    "question_source": "Trích rõ nguồn câu hỏi (tên file hoặc AI)"
   }}
 ]
-- correct_index là số nguyên 0, 1, 2, hoặc 3 (tương ứng A, B, C, D).
-- Câu hỏi phải rõ ràng, phù hợp trình độ đại học.
-- Chỉ trả về JSON, không có văn bản thêm vào."""
+- correct_index luôn là 0, 1, 2, hoặc 3 (tương ứng A, B, C, D).
+- Câu hỏi phải rõ ràng, bám sát chuyên môn học thuật.
+- Chỉ trả về chuỗi JSON mảng."""
 
     try:
         response = client.models.generate_content(model=MODEL_NAME, contents=prompt)
@@ -280,15 +420,61 @@ Trả về CHỈ một mảng JSON hợp lệ (không có markdown, không có `
 
         questions = _json.loads(raw.strip())
 
-        # Validate cấu trúc
+        # Validate cấu trúc + gắn source metadata
         validated = []
         for q in questions:
             if all(k in q for k in ['question', 'options', 'correct_index', 'explanation']):
                 if isinstance(q['options'], list) and len(q['options']) == 4:
                     if isinstance(q['correct_index'], int) and 0 <= q['correct_index'] <= 3:
+                        q['source'] = source_label
+                        q['has_doc_context'] = has_doc_context
+                        # Nhúng nguồn trực tiếp vào lời giải thích để UI có thể show ra
+                        if 'question_source' in q and q['question_source']:
+                            q['explanation'] = f"[Nguồn: {q['question_source']}] " + q['explanation']
                         validated.append(q)
         return validated
     except Exception as e:
         print(f"Exam JSON generation error: {e}")
         return []
 
+
+def generate_weakness_exam_json(subject: str, topic_name: str, wrong_questions: list, num_questions: int = 5) -> list:
+    """
+    Sinh đề thi tập trung vào điểm yếu cụ thể (cluster).
+    """
+    questions_list = "\n".join([f"- {q}" for q in wrong_questions[:5]])  # Lấy tối đa 5 câu đại diện
+    
+    prompt = f"""Bạn là giáo viên ra đề thi trắc nghiệm môn {subject}.
+Học sinh đang yếu và hay làm sai ở dạng bài/chủ đề: "{topic_name}".
+Dưới đây là một số câu hỏi mà học sinh ĐÃ LÀM SAI trước đó thuộc chủ đề này:
+{questions_list}
+
+Hãy XÂY DỰNG MỚI {num_questions} câu hỏi trắc nghiệm TƯƠNG TỰ (cùng cấu trúc, mức độ khó, hoặc mở rộng nhẹ) để học sinh luyện tập khắc phục điểm yếu này.
+Trả về CHỈ một mảng JSON hợp lệ (không có markdown, không có ```json), theo định dạng:
+[
+  {{
+    "question": "Nội dung câu hỏi?",
+    "options": ["Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D"],
+    "correct_index": 0,
+    "explanation": "Giải thích chi tiết tại sao đáp án đúng."
+  }}
+]"""
+
+    try:
+        response = client.models.generate_content(model=MODEL_NAME, contents=prompt)
+        raw = response.text.strip()
+        raw = _re.sub(r'^```[a-z]*\n?', '', raw, flags=_re.MULTILINE)
+        raw = _re.sub(r'```$', '', raw.strip())
+        questions = _json.loads(raw.strip())
+        
+        validated = []
+        for q in questions:
+            if all(k in q for k in ['question', 'options', 'correct_index', 'explanation']):
+                if isinstance(q['options'], list) and len(q['options']) == 4:
+                    if isinstance(q['correct_index'], int) and 0 <= q['correct_index'] <= 3:
+                        q['source'] = f"🎯 Ôn tập điểm yếu: {topic_name}"
+                        validated.append(q)
+        return validated
+    except Exception as e:
+        print(f"Weakness Exam JSON gen error: {e}")
+        return []

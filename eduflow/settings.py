@@ -59,7 +59,8 @@ ROOT_URLCONF = "eduflow.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        # ─── Frontend: tìm templates trong frontend/templates/ ───
+        "DIRS": [BASE_DIR / "frontend" / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -121,7 +122,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
-STATICFILES_DIRS = [BASE_DIR / "study" / "static"]
+# ─── Frontend: tìm static files trong frontend/static/ ───
+STATICFILES_DIRS = [BASE_DIR / "frontend" / "static"]
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"

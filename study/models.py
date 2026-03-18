@@ -105,3 +105,24 @@ class ExamSession(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.subject.name} - {self.score}/10"
 
+
+class UploadedExam(models.Model):
+    """Lưu đề thi đã upload và được parse thành JSON chuẩn bởi LLM."""
+    document = models.OneToOneField(Document, on_delete=models.CASCADE, related_name='uploaded_exam')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='uploaded_exams')
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='uploaded_exams')
+    # Tên hiển thị (lấy từ filename, không có extension)
+    display_name = models.CharField(max_length=255)
+    # JSON chuẩn: list of {question, options:[A,B,C,D], correct_index:0-3, explanation}
+    questions_json = models.TextField()
+    total_questions = models.IntegerField(default=0)
+    # Trạng thái parse: pending / done / failed
+    parse_status = models.CharField(max_length=20, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.display_name} [{self.subject.name}] - {self.total_questions} câu"
+

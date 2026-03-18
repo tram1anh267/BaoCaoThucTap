@@ -8,6 +8,7 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 from collections import Counter
 
 from .models import ExamSession
@@ -74,11 +75,26 @@ def cluster_wrong_questions(wrong_questions, n_clusters=None):
         }
 
     # Bước 1: TF-IDF Vectorization
+    # Danh sách từ dừng kết hợp tiếng Anh và các từ phổ biến/từ đề thi tiếng Việt
+    custom_stop_words = list(ENGLISH_STOP_WORDS) + [
+        # Từ nối, đại từ cơ bản TV
+        "là", "của", "và", "trong", "các", "khi", "có", "không", "để", "với", "cho", "thì", 
+        "được", "những", "đã", "này", "đó", "tại", "vào", "ra", "làm", "sự", "như", "hay", 
+        "hoặc", "nên", "ở", "từ", "một", "bị", "bởi", "thấy", "rằng", "rất",
+        # Từ ngữ đặc thù trong đề thi trắc nghiệm (cả Anh & Việt)
+        "câu", "hỏi", "đáp", "án", "đúng", "sai", "chọn", "phương", "nào", "sau", "đây", 
+        "ý", "phát", "biểu", "mệnh", "đề", "trắc", "nghiệm", "dưới", "nhất", "điền", "trống",
+        "thế", "người", "ta", "việc", "nhận", "định", "đặc", "điểm",
+        "correct", "incorrect", "answer", "question", "options", "option", "choose", 
+        "following", "statement", "statements", "true", "false", "blank", "best", 
+        "which", "what", "where", "when", "how", "why", "who"
+    ]
+
     texts = [q['question'] + ' ' + q.get('explanation', '') for q in wrong_questions]
-    
+
     vectorizer = TfidfVectorizer(
         max_features=200,
-        stop_words=None,  # Giữ tiếng Việt
+        stop_words=custom_stop_words,
         ngram_range=(1, 2),
         min_df=1,
         max_df=0.95,
@@ -130,10 +146,17 @@ def cluster_wrong_questions(wrong_questions, n_clusters=None):
         clusters.append({
             'cluster_id': cluster_id,
             'topic_keywords': top_keywords,
+            'topic_name': '',  # Sẽ được Gemini điền sau
             'questions': cluster_questions,
             'count': len(cluster_questions),
             'percentage': round(len(cluster_questions) / len(wrong_questions) * 100, 1),
         })
+
+    # Chỉ dùng các từ khoá TF-IDF để định dạng tên chủ đề
+    for c in clusters:
+        # Lấy tối đa 3 từ khoá đầu tiên nối lại làm tên chủ đề, viết hoa chữ cái đầu
+        kw_str = ", ".join(c['topic_keywords'][:3])
+        c['topic_name'] = f"Chủ đề: {kw_str.capitalize()}"
 
     # Sắp xếp theo số câu sai giảm dần (điểm yếu lớn nhất trước)
     clusters.sort(key=lambda c: c['count'], reverse=True)
@@ -197,11 +220,14 @@ def generate_weakness_report(user, subject=None):
         ]
 
         weakness_topics.append({
+            'topic_name': cluster['topic_name'],
             'topic_keywords': cluster['topic_keywords'],
             'wrong_count': cluster['count'],
             'percentage': cluster['percentage'],
             'sample_questions': sample_questions,
             'severity': 'high' if cluster['percentage'] >= 40 else ('medium' if cluster['percentage'] >= 20 else 'low'),
+            # Thu thập toàn bộ ID/nội dung câu hỏi của cụm này gửi xuống Frontend luôn để luyện tập
+            'cluster_questions': [q['question'] for q in cluster['questions']]
         })
 
     return {
@@ -237,9 +263,38 @@ _SUMMARY_MODEL = os.getenv("MODEL_NAME", "gemini-2.0-flash-lite")
 
 
 def _split_sentences(text):
-    """Tach text thanh danh sach cau (ho tro tieng Viet)."""
-    raw = re.split(r'(?<=[.!?])\s+|\n+', text)
-    sentences = [s.strip() for s in raw if len(s.strip()) > 15]
+    """Tach text thanh danh sach cau (loai bo ky tu nhieu tu slide/PDF)."""
+    # Loai bo email va URL, loai cac day so dai
+    text = re.sub(r'\S+@\S+', '', text)
+    text = re.sub(r'http\S+', '', text)
+    text = re.sub(r'\b\d{8,}\b', '', text)  # day so > 8 ky tu (SDT, footer)
+    
+    # Noi cac cau bi ngat dong giua chung trong PDF
+    text = re.sub(r'(?<!\n)\n(?!\n)', ' ', text)
+    
+    # Giam khoang trang
+    text = re.sub(r'\s+', ' ', text)
+    
+    # Tach bang dau cau
+    raw = re.split(r'(?<=[.!?])\s+', text)
+    
+    sentences = []
+    seen = set()
+    for s in raw:
+        s = s.strip()
+        # Filter 1: do dai toi thieu 30 ky tu, it nhat 6 tu tieng Viet
+        if len(s) > 30 and len(s.split()) >= 6:
+            # Filter 2: khong de lot cau toan so hay ki tu dac biet
+            if not re.match(r'^[\d\W_]+$', s):
+                if s not in seen:
+                    sentences.append(s)
+                    seen.add(s)
+                    
+    # Fallback neu lo loc het sach (vd slide chi chua phrase ngan)
+    if not sentences:
+        raw_fallback = re.split(r'\n+', text)
+        sentences = [s.strip() for s in raw_fallback if len(s.strip()) > 15]
+        
     return sentences
 
 
@@ -403,130 +458,3 @@ def summarize_document(text, num_extractive=5):
         },
     }
 
-
-# ─────────────────────────────────────────────────────────
-# Oral Exam – Chấm điểm vấn đáp bằng TF-IDF + Gemini AI
-# ─────────────────────────────────────────────────────────
-
-from sklearn.metrics.pairwise import cosine_similarity as _cosine_sim
-
-
-def compute_answer_similarity(student_answer, reference_answer):
-    """
-    So sánh câu trả lời sinh viên với đáp án mẫu bằng TF-IDF + Cosine Similarity.
-    Returns: float 0-1 (1 = giống hoàn toàn)
-    """
-    if not student_answer or not reference_answer:
-        return 0.0
-
-    vectorizer = TfidfVectorizer(ngram_range=(1, 2), max_features=300)
-    try:
-        tfidf = vectorizer.fit_transform([reference_answer, student_answer])
-        sim = _cosine_sim(tfidf[0:1], tfidf[1:2])[0][0]
-        return round(float(sim), 4)
-    except Exception:
-        return 0.0
-
-
-def generate_oral_question(subject_name, context=""):
-    """Sinh 1 câu hỏi vấn đáp + đáp án mẫu bằng Gemini AI."""
-    ctx_part = f"\nDựa trên nội dung:\n{context[:3000]}" if context else ""
-    prompt = f"""Bạn là giảng viên đại học đang vấn đáp sinh viên môn {subject_name}.{ctx_part}
-
-Tạo 1 câu hỏi vấn đáp (tự luận ngắn, yêu cầu giải thích) và đáp án mẫu.
-Trả về ĐÚNG JSON format:
-{{
-  "question": "Câu hỏi...",
-  "reference_answer": "Đáp án mẫu chi tiết 2-4 câu...",
-  "keywords": ["từ khóa 1", "từ khóa 2", "từ khóa 3"]
-}}
-CHỈ trả về JSON, không thêm gì khác."""
-
-    try:
-        response = _summary_client.models.generate_content(
-            model=_SUMMARY_MODEL, contents=prompt
-        )
-        raw = response.text.strip()
-        raw = re.sub(r'^```[a-z]*\n?', '', raw, flags=re.MULTILINE)
-        raw = re.sub(r'```$', '', raw.strip())
-        import json as _json
-        data = _json.loads(raw)
-        return data
-    except Exception as e:
-        print(f"Oral question error: {e}")
-        return None
-
-
-def grade_oral_answer(question, student_answer, reference_answer, keywords=None):
-    """
-    Chấm điểm vấn đáp: kết hợp ML (TF-IDF cosine) + AI (Gemini).
-    Returns: {ml_score, ai_score, final_score, feedback, keyword_hits}
-    """
-    # 1. ML Score: TF-IDF Cosine Similarity
-    ml_similarity = compute_answer_similarity(student_answer, reference_answer)
-    ml_score = round(ml_similarity * 10, 1)  # scale 0-10
-
-    # 2. Keyword matching
-    keyword_hits = []
-    if keywords:
-        answer_lower = student_answer.lower()
-        for kw in keywords:
-            keyword_hits.append({
-                'keyword': kw,
-                'found': kw.lower() in answer_lower,
-            })
-    keyword_ratio = sum(1 for k in keyword_hits if k['found']) / max(len(keyword_hits), 1)
-
-    # 3. AI Score: Gemini grading
-    prompt = f"""Bạn là giảng viên đại học. Chấm điểm câu trả lời vấn đáp của sinh viên.
-
-CÂU HỎI: {question}
-ĐÁP ÁN MẪU: {reference_answer}
-CÂU TRẢ LỜI SINH VIÊN: {student_answer}
-
-Đánh giá và trả về ĐÚNG JSON:
-{{
-  "score": <điểm 0-10>,
-  "feedback": "Nhận xét chi tiết bằng tiếng Việt (2-3 câu)...",
-  "strengths": "Điểm mạnh...",
-  "improvements": "Cần cải thiện..."
-}}
-CHỈ trả về JSON."""
-
-    ai_score = 5.0
-    feedback = ""
-    strengths = ""
-    improvements = ""
-
-    try:
-        response = _summary_client.models.generate_content(
-            model=_SUMMARY_MODEL, contents=prompt
-        )
-        raw = response.text.strip()
-        raw = re.sub(r'^```[a-z]*\n?', '', raw, flags=re.MULTILINE)
-        raw = re.sub(r'```$', '', raw.strip())
-        import json as _json
-        data = _json.loads(raw)
-        ai_score = float(data.get('score', 5))
-        feedback = data.get('feedback', '')
-        strengths = data.get('strengths', '')
-        improvements = data.get('improvements', '')
-    except Exception as e:
-        print(f"AI grading error: {e}")
-        feedback = "Không thể đánh giá bằng AI."
-
-    # 4. Final Score: weighted average
-    final_score = round(ml_score * 0.3 + ai_score * 0.5 + keyword_ratio * 10 * 0.2, 1)
-    final_score = min(final_score, 10.0)
-
-    return {
-        'ml_score': ml_score,
-        'ml_similarity': ml_similarity,
-        'ai_score': ai_score,
-        'keyword_score': round(keyword_ratio * 10, 1),
-        'keyword_hits': keyword_hits,
-        'final_score': final_score,
-        'feedback': feedback,
-        'strengths': strengths,
-        'improvements': improvements,
-    }
