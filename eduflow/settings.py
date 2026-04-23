@@ -143,6 +143,18 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
 
+# ─────────────────────────────────────────────────────────
+# CSRF – Fix cho production deploy (Railway)
+# ─────────────────────────────────────────────────────────
+_csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+if _csrf_origins:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_origins.split(",")]
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        "https://*.railway.app",
+        "https://*.up.railway.app",
+    ]
+
 # Messages framework
 from django.contrib.messages import constants as message_constants
 MESSAGE_TAGS = {
