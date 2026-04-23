@@ -1,4 +1,6 @@
 django
+gunicorn
+whitenoise
 langchain
 langchain-community
 langchain-google-genai
