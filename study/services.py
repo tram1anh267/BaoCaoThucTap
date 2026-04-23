@@ -1,5 +1,5 @@
 import os
-import easyocr
+import pytesseract
 import numpy as np
 from PIL import Image
 from pdf2image import convert_from_path
@@ -13,7 +13,8 @@ from pypdf import PdfReader
 
 load_dotenv()
 
-_ocr_reader = easyocr.Reader(['vi', 'en'], gpu=False)
+# Cấu hình pytesseract cho tiếng Việt
+_TESSERACT_LANG = 'vie+eng'
 
 client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 MODEL_NAME = os.getenv("MODEL_NAME", "gemini-2.0-flash-lite")
@@ -41,35 +42,30 @@ def extract_text(file_path):
     ext = os.path.splitext(file_path)[1].lower()
     try:
         if ext in ['.jpg', '.jpeg', '.png', '.bmp']:
-            result = _ocr_reader.readtext(file_path, detail=0)
-            return ' '.join(result)
+            img = Image.open(file_path)
+            return pytesseract.image_to_string(img, lang=_TESSERACT_LANG)
         elif ext == '.pdf':
             # Ưu tiên extract text trực tiếp
             reader = PdfReader(file_path)
             text = ""
             for page in reader.pages:
                 text += page.extract_text() or ""
-            
+
             # Fallback sang OCR nếu PDF là scan hoặc slide image-based
             words_per_page = len(text.split()) / max(len(reader.pages), 1)
             if not text.strip() or words_per_page < 20:
-                print(f"PDF text quá ít ({len(text.split())} từ / {len(reader.pages)} trang), fallback sang EasyOCR...")
-                
-                # Cấu hình tối ưu cho pdf2image: giảm DPI xuống 150 để tăng tốc, dùng thread_count
-                pages = convert_from_path(file_path, dpi=150, thread_count=4)
-                
-                # Dùng ThreadPoolExecutor để chạy OCR song song cho các trang
-                from concurrent.futures import ThreadPoolExecutor
-                
-                def ocr_page(page_img):
-                    # Chuyển sang numpy array và thực hiện OCR
-                    return ' '.join(_ocr_reader.readtext(np.array(page_img), detail=0))
+                print(f"PDF text quá ít ({len(text.split())} từ / {len(reader.pages)} trang), fallback sang pytesseract OCR...")
 
-                ocr_text = ""
-                # Giới hạn workers để tránh ngốn RAM quá mức trên máy cá nhân
+                pages = convert_from_path(file_path, dpi=150, thread_count=4)
+
+                from concurrent.futures import ThreadPoolExecutor
+
+                def ocr_page(page_img):
+                    return pytesseract.image_to_string(page_img, lang=_TESSERACT_LANG)
+
                 with ThreadPoolExecutor(max_workers=max(1, os.cpu_count() // 2)) as executor:
                     results = list(executor.map(ocr_page, pages))
-                
+
                 ocr_text = '\n'.join(results)
                 if ocr_text.strip():
                     text = ocr_text
