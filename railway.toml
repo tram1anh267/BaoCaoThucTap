@@ -5,6 +5,6 @@ builder = "NIXPACKS"
 pkgs = ["tesseract-ocr", "tesseract-ocr-vie", "poppler-utils", "libgl1"]
 
 [deploy]
-startCommand = "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn eduflow.wsgi --bind 0.0.0.0:$PORT"
+startCommand = "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn eduflow.wsgi --bind 0.0.0.0:$PORT --timeout 300 --workers 2"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3

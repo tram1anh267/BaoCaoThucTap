@@ -215,6 +215,7 @@ async function handleUpload(input) {
       status.innerHTML = `<p style="color:#fca5a5">❌ ${data.message}</p>`;
     }
   } catch (e) {
+    console.error("Upload detail error:", e);
     status.innerHTML = '<p style="color:#fca5a5">❌ Lỗi kết nối.</p>';
   }
   input.value = "";
