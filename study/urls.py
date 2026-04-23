@@ -17,6 +17,7 @@ urlpatterns = [
     # Documents
     path('api/upload/',                          views.upload_file,    name='upload_file'),
     path('api/subject/<int:subject_id>/docs/',   views.documents_list, name='documents_list'),
+    path('api/document/<int:doc_id>/delete/',    views.delete_document, name='delete_document'),
 
     # Chat
     path('api/chat/',                            views.chat,          name='chat'),

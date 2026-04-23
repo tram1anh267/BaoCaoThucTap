@@ -1,5 +1,6 @@
 import os
-import pytesseract
+import easyocr
+import numpy as np
 from PIL import Image
 from pdf2image import convert_from_path
 from django.conf import settings
@@ -12,18 +13,15 @@ from pypdf import PdfReader
 
 load_dotenv()
 
-# ─────────────────────────────────────────────────────────
-# Khởi tạo AI Client & Embeddings
-# ─────────────────────────────────────────────────────────
+_ocr_reader = easyocr.Reader(['vi', 'en'], gpu=False)
+
 client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 MODEL_NAME = os.getenv("MODEL_NAME", "gemini-2.0-flash-lite")
 
 embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
 persist_directory = os.path.join(settings.BASE_DIR, "data", "chroma_db")
 
-# ─────────────────────────────────────────────────────────
-# SYSTEM PROMPT – Prompt Engineering nâng cao
-# ─────────────────────────────────────────────────────────
+# SYSTEM PROMPT
 SYSTEM_PROMPT = """Bạn là EduFlow AI – trợ lý học tập cho sinh viên.
 
 QUY TẮC QUAN TRỌNG:
@@ -34,7 +32,6 @@ QUY TẮC QUAN TRỌNG:
 - Không lặp lại câu hỏi trong câu trả lời.
 """
 
-
 # ─────────────────────────────────────────────────────────
 # OCR & TEXT EXTRACTION
 # ─────────────────────────────────────────────────────────
@@ -44,7 +41,8 @@ def extract_text(file_path):
     ext = os.path.splitext(file_path)[1].lower()
     try:
         if ext in ['.jpg', '.jpeg', '.png', '.bmp']:
-            return pytesseract.image_to_string(Image.open(file_path), lang='vie+eng')
+            result = _ocr_reader.readtext(file_path, detail=0)
+            return ' '.join(result)
         elif ext == '.pdf':
             # Ưu tiên extract text trực tiếp
             reader = PdfReader(file_path)
@@ -52,36 +50,33 @@ def extract_text(file_path):
             for page in reader.pages:
                 text += page.extract_text() or ""
             
-            # Fallback sang OCR nếu PDF là scan
-            if not text.strip():
-                print("PDF text empty, falling back to OCR...")
-                pages = convert_from_path(file_path)
-                for page in pages:
-                    text += pytesseract.image_to_string(page, lang='vie+eng')
+            # Fallback sang OCR nếu PDF là scan hoặc slide image-based
+            words_per_page = len(text.split()) / max(len(reader.pages), 1)
+            if not text.strip() or words_per_page < 20:
+                print(f"PDF text quá ít ({len(text.split())} từ / {len(reader.pages)} trang), fallback sang EasyOCR...")
+                
+                # Cấu hình tối ưu cho pdf2image: giảm DPI xuống 150 để tăng tốc, dùng thread_count
+                pages = convert_from_path(file_path, dpi=150, thread_count=4)
+                
+                # Dùng ThreadPoolExecutor để chạy OCR song song cho các trang
+                from concurrent.futures import ThreadPoolExecutor
+                
+                def ocr_page(page_img):
+                    # Chuyển sang numpy array và thực hiện OCR
+                    return ' '.join(_ocr_reader.readtext(np.array(page_img), detail=0))
+
+                ocr_text = ""
+                # Giới hạn workers để tránh ngốn RAM quá mức trên máy cá nhân
+                with ThreadPoolExecutor(max_workers=max(1, os.cpu_count() // 2)) as executor:
+                    results = list(executor.map(ocr_page, pages))
+                
+                ocr_text = '\n'.join(results)
+                if ocr_text.strip():
+                    text = ocr_text
             return text
     except Exception as e:
         print(f"Extraction Error: {e}")
     return ""
-
-
-def classify_text(text):
-    """Phân loại tài liệu dựa trên nội dung."""
-    text_lower = text.lower()
-    if any(kw in text_lower for kw in ['slide', 'trình chiếu', 'powerpoint', 'bài giảng', 'lecture']):
-        return "Slide"
-    elif any(kw in text_lower for kw in ['giáo trình', 'textbook', 'sách giáo khoa', 'chương trình đào tạo']):
-        return "Textbook"
-    elif any(kw in text_lower for kw in ['đề thi', 'kỳ thi', 'exam', 'năm học', 'học kỳ', 'đề kiểm tra']):
-        return "PastExam"
-    elif any(kw in text_lower for kw in ['ví dụ', 'example', 'ex:', 'minh họa']):
-        return "Examples"
-    elif any(kw in text_lower for kw in ['bài tập', 'luyện tập', 'exercise', 'practice', 'đề bài']):
-        return "Exercises"
-    elif any(kw in text_lower for kw in ['lý thuyết', 'khái niệm', 'định nghĩa', 'theory', 'chương']):
-        return "Theory"
-    return "Other"
-
-
 # ─────────────────────────────────────────────────────────
 # RAG – INDEX & RETRIEVE
 # ─────────────────────────────────────────────────────────
@@ -101,20 +96,47 @@ def index_document(text, metadata):
     # Lowercase subject để đồng bộ với retrieval
     if 'subject' in metadata:
         metadata['subject'] = metadata['subject'].lower()
+    # Gói Free Tier Google Gemini chặn khoảng 100-150 requests/phút. 
+    # Ta tăng batch_size lên 100 (vì embed_documents của LangChain sẽ gộp các chunk này vào ít request hơn)
+    # và giảm thời gian chờ xuống để tăng tốc độ.
+    import time
+    batch_size = 100
+    total_indexed = 0
 
-    Chroma.from_texts(
-        texts=chunks,
-        embedding=embeddings,
-        persist_directory=persist_directory,
-        metadatas=[metadata] * len(chunks)
-    )
-    print(f"Indexed {len(chunks)} chunks for subject: {metadata.get('subject')}")
+    print(f"Bắt đầu xử lý Text dài: Tổng cộng {len(chunks)} chunks.")
+    
+    for i in range(0, len(chunks), batch_size):
+        batch_chunks = chunks[i:i + batch_size]
+        batch_metadatas = [metadata] * len(batch_chunks)
+        
+        try:
+            Chroma.from_texts(
+                texts=batch_chunks,
+                embedding=embeddings,
+                persist_directory=persist_directory,
+                metadatas=batch_metadatas
+            )
+            total_indexed += len(batch_chunks)
+            print(f" Đã nhét thành công đợt {i//batch_size + 1} ({len(batch_chunks)} chunks).")
+            
+            # Chỉ nghỉ 2 giây thay vì 15 giây để tăng tốc, vẫn tránh spam API quá đà
+            if i + batch_size < len(chunks):
+                time.sleep(2)
+                
+        except Exception as e:
+            print(f" Lỗi ở lô {i//batch_size + 1}: {e}")
+            if "429" in str(e):
+                print(f" Bị giới hạn tốc độ (429), nghỉ 20s...")
+                time.sleep(20)
+            continue
+
+    print(f" Hoàn thành: Đã lưu {total_indexed}/{len(chunks)} chunks cho môn: {metadata.get('subject')}")
 
 
-def retrieve_context(subject_name: str, user_id: str, query: str) -> str:
-    """Tìm kiếm các đoạn tài liệu liên quan từ ChromaDB."""
+def retrieve_context(subject_name: str, user_id: str, query: str) -> tuple[str, list]:
+    """Tìm kiếm các đoạn tài liệu liên quan từ ChromaDB. Trả về (context_string, chunks_list)."""
     if not os.path.exists(persist_directory) or not os.listdir(persist_directory):
-        return ""
+        return "", []
     
     subject_lower = subject_name.lower()
     
@@ -142,12 +164,13 @@ def retrieve_context(subject_name: str, user_id: str, query: str) -> str:
             ).invoke(query)
         
         if docs:
-            context = "\n\n---\n\n".join([doc.page_content for doc in docs])
+            chunks = [doc.page_content for doc in docs]
+            context = "\n\n---\n\n".join(chunks)
             print(f"RAG found {len(docs)} chunks for '{subject_name}'")
-            return context
+            return context, chunks
     except Exception as e:
         print(f"Vector DB Error (skipped): {e}")
-    return ""
+    return "", []
 
 
 def retrieve_exam_context(subject_name: str, user_id: str, k: int = 8) -> tuple[str, list]:
@@ -190,21 +213,18 @@ def retrieve_exam_context(subject_name: str, user_id: str, k: int = 8) -> tuple[
         print(f"Exam Context DB Error (skipped): {e}")
     return "", []
 
-
-# ─────────────────────────────────────────────────────────
 # LLM GENERATION với Prompt Engineering nâng cao
-# ─────────────────────────────────────────────────────────
-
-def get_answer(subject: str, query: str, history: str = "", user_id: str = "") -> str:
+def get_answer(subject: str, query: str, history: str = "", user_id: str = "") -> tuple[str, list]:
     """
     Sinh câu trả lời từ Gemini AI với:
     - RAG context từ tài liệu của user
     - Conversation history (memory)
     - Prompt Engineering nâng cao
+    Trả về (answer_string, retrieved_chunks_list)
     """
     try:
         # Bước 1: RAG – Retrieve relevant context
-        context = retrieve_context(subject, user_id, query)
+        context, chunks = retrieve_context(subject, user_id, query)
 
         # Bước 2: Xây dựng prompt (Prompt Engineering)
         prompt_parts = [SYSTEM_PROMPT, "\n\n"]
@@ -242,9 +262,9 @@ def get_answer(subject: str, query: str, history: str = "", user_id: str = "") -
                 )
                 # Xử lý response
                 if hasattr(response, 'text') and response.text:
-                    return response.text
+                    return response.text, chunks
                 else:
-                    return "AI không phản hồi nội dung. Có thể do chính sách an toàn."
+                    return "AI không phản hồi nội dung. Có thể do chính sách an toàn.", chunks
             except Exception as api_err:
                 last_error = api_err
                 if '503' in str(api_err) or 'UNAVAILABLE' in str(api_err):
@@ -253,11 +273,11 @@ def get_answer(subject: str, query: str, history: str = "", user_id: str = "") -
                     continue
                 raise
 
-        return "⏳ Gemini AI đang quá tải. Vui lòng thử lại sau 30 giây."
+        return "Gemini AI đang quá tải. Vui lòng thử lại sau 30 giây.", chunks
 
     except Exception as e:
         print(f"General AI Error: {e}")
-        return "⏳ AI đang bận, vui lòng thử lại sau ít giây."
+        return "AI đang bận rùiii, vui lòng thử lại sau ít giây nha tình yêu", []
 
 
 def generate_mock_exam(subject: str) -> str:
@@ -267,12 +287,12 @@ def generate_mock_exam(subject: str) -> str:
 - 2 câu hỏi tự luận ngắn với gợi ý trả lời
 
 Định dạng đề thi rõ ràng, có đánh số câu hỏi."""
-    return get_answer(subject, exam_prompt)
+    answer, _ = get_answer(subject, exam_prompt)
+    return answer
 
 
 import json as _json
 import re as _re
-
 
 def parse_exam_from_text(raw_text: str, subject: str) -> list:
     """
@@ -411,28 +431,50 @@ Trả về CHỈ một mảng JSON hợp lệ (không có markdown, không có `
 - Chỉ trả về chuỗi JSON mảng."""
 
     try:
-        response = client.models.generate_content(model=MODEL_NAME, contents=prompt)
-        raw = response.text.strip()
+        import time
+        from google.genai import types
+        
+        for attempt in range(3):
+            try:
+                response = client.models.generate_content(
+                    model=MODEL_NAME, 
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        max_output_tokens=8000,
+                        temperature=0.7,
+                    )
+                )
+                raw = response.text.strip()
 
-        # Strip markdown code fences nếu có
-        raw = _re.sub(r'^```[a-z]*\n?', '', raw, flags=_re.MULTILINE)
-        raw = _re.sub(r'```$', '', raw.strip())
+                # Strip markdown code fences nếu có
+                raw = _re.sub(r'^```[a-z]*\n?', '', raw, flags=_re.MULTILINE)
+                raw = _re.sub(r'```$', '', raw.strip())
 
-        questions = _json.loads(raw.strip())
+                questions = _json.loads(raw.strip())
 
-        # Validate cấu trúc + gắn source metadata
-        validated = []
-        for q in questions:
-            if all(k in q for k in ['question', 'options', 'correct_index', 'explanation']):
-                if isinstance(q['options'], list) and len(q['options']) == 4:
-                    if isinstance(q['correct_index'], int) and 0 <= q['correct_index'] <= 3:
-                        q['source'] = source_label
-                        q['has_doc_context'] = has_doc_context
-                        # Nhúng nguồn trực tiếp vào lời giải thích để UI có thể show ra
-                        if 'question_source' in q and q['question_source']:
-                            q['explanation'] = f"[Nguồn: {q['question_source']}] " + q['explanation']
-                        validated.append(q)
-        return validated
+                # Validate cấu trúc + gắn source metadata
+                validated = []
+                for q in questions:
+                    if all(k in q for k in ['question', 'options', 'correct_index', 'explanation']):
+                        if isinstance(q['options'], list) and len(q['options']) == 4:
+                            if isinstance(q['correct_index'], int) and 0 <= q['correct_index'] <= 3:
+                                q['source'] = source_label
+                                q['has_doc_context'] = has_doc_context
+                                # Nhúng nguồn trực tiếp vào lời giải thích để UI có thể show ra
+                                if 'question_source' in q and q['question_source']:
+                                    q['explanation'] = f"[Nguồn: {q['question_source']}] " + q['explanation']
+                                validated.append(q)
+                return validated
+            except Exception as api_err:
+                if '503' in str(api_err) or 'UNAVAILABLE' in str(api_err):
+                    print(f"Gemini 503 in generate_exam_json, retry {attempt+1}/3...")
+                    time.sleep(3)
+                    continue
+                print(f"Exam JSON API error: {api_err}")
+                return []
+        
+        return []
+
     except Exception as e:
         print(f"Exam JSON generation error: {e}")
         return []
@@ -461,20 +503,42 @@ Trả về CHỈ một mảng JSON hợp lệ (không có markdown, không có `
 ]"""
 
     try:
-        response = client.models.generate_content(model=MODEL_NAME, contents=prompt)
-        raw = response.text.strip()
-        raw = _re.sub(r'^```[a-z]*\n?', '', raw, flags=_re.MULTILINE)
-        raw = _re.sub(r'```$', '', raw.strip())
-        questions = _json.loads(raw.strip())
+        import time
+        from google.genai import types
         
-        validated = []
-        for q in questions:
-            if all(k in q for k in ['question', 'options', 'correct_index', 'explanation']):
-                if isinstance(q['options'], list) and len(q['options']) == 4:
-                    if isinstance(q['correct_index'], int) and 0 <= q['correct_index'] <= 3:
-                        q['source'] = f"🎯 Ôn tập điểm yếu: {topic_name}"
-                        validated.append(q)
-        return validated
+        for attempt in range(3):
+            try:
+                response = client.models.generate_content(
+                    model=MODEL_NAME, 
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        max_output_tokens=4000,
+                        temperature=0.7,
+                    )
+                )
+                raw = response.text.strip()
+                raw = _re.sub(r'^```[a-z]*\n?', '', raw, flags=_re.MULTILINE)
+                raw = _re.sub(r'```$', '', raw.strip())
+                questions = _json.loads(raw.strip())
+                
+                validated = []
+                for q in questions:
+                    if all(k in q for k in ['question', 'options', 'correct_index', 'explanation']):
+                        if isinstance(q['options'], list) and len(q['options']) == 4:
+                            if isinstance(q['correct_index'], int) and 0 <= q['correct_index'] <= 3:
+                                q['source'] = f"🎯 Ôn tập điểm yếu: {topic_name}"
+                                validated.append(q)
+                return validated
+            except Exception as api_err:
+                if '503' in str(api_err) or 'UNAVAILABLE' in str(api_err):
+                    print(f"Gemini 503 in generate_weakness_exam, retry {attempt+1}/3...")
+                    time.sleep(3)
+                    continue
+                print(f"Weakness Exam API error: {api_err}")
+                return []
+        
+        return []
+
     except Exception as e:
         print(f"Weakness Exam JSON gen error: {e}")
         return []

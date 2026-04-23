@@ -9,7 +9,7 @@ let examSessionId = null;
 let examQuestions = [];
 let userAnswers = [];
 let examTimerRef = null;
-let selectedCategory = ""; // for upload
+let selectedCategory = "Theory"; // for upload
 let currentWeaknessTopics = []; // store for practice
 
 // ── Toggle Chat Widget ──
@@ -48,15 +48,13 @@ function showSection(name, el) {
 }
 
 // ── Select subject → activate chat ──
-function selectSubject(id, name) {
+function selectSubject(event, el) {
+  const id = el.dataset.id;
+  const name = el.dataset.name;
   activeSubjectId = id;
   activeSubjectName = name;
   document.querySelectorAll(".subject-card").forEach((c) => c.classList.remove("selected"));
-
-  // Find the card that was clicked (might be tricky if called via onclick with event)
-  if (window.event && window.event.currentTarget) {
-    window.event.currentTarget.classList.add("selected");
-  }
+  el.classList.add("selected");
 
   const input = document.getElementById("chatInput");
   const btn = document.getElementById("sendBtn");
@@ -189,7 +187,11 @@ async function handleUpload(input) {
     return;
   }
   const status = document.getElementById("upload-status");
-  status.innerHTML = '<p style="color:var(--text-muted)">⏳ Đang xử lý OCR & phân loại...</p>';
+  status.innerHTML = `
+    <div style="display:flex; align-items:center; gap:10px; color:var(--text-muted)">
+        <div class="spinner-small"></div>
+        <span>Đang xử lý tài liệu (OCR & Phân tích)... Vui lòng đợi trong giây lát.</span>
+    </div>`;
 
   const form = new FormData();
   form.append("file", input.files[0]);
@@ -250,8 +252,11 @@ async function loadDocuments(subjectId) {
         html += `<div style="display:flex; justify-content:space-between; align-items:center;
                 padding:0.5rem 0.75rem; background:rgba(255,255,255,0.03); border-radius:8px;
                 font-size:0.85rem; color:#cbd5e1;">
-                <span>📄 ${d.filename}</span>
-                <span style="color:var(--text-muted); font-size:0.75rem">${d.uploaded_at}</span>
+                <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-right:10px;">📄 ${d.filename}</span>
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <span style="color:var(--text-muted); font-size:0.75rem">${d.uploaded_at}</span>
+                    <button onclick="deleteDocument(${d.id})" style="background:none; border:none; color:#f87171; cursor:pointer; font-size:1rem; padding:0" title="Xóa tài liệu này">🗑️</button>
+                </div>
               </div>`;
       });
       html += "</div></div>";
@@ -262,8 +267,33 @@ async function loadDocuments(subjectId) {
   }
 }
 
+async function deleteDocument(docId) {
+  if (!confirm("⚠️ Cảnh báo: Bạn có chắc muốn xóa tài liệu này?\\n\\nDữ liệu bộ nhớ AI và các đề thi sinh ra từ tài liệu này cũng sẽ bị mất. Hành động này không thể hoàn tác!")) return;
+
+  try {
+    const res = await fetch(`/api/document/${docId}/delete/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken }
+    });
+    const data = await res.json();
+    if (data.status === 'success') {
+      const subjIdFilter = document.getElementById("docsSubjectFilter").value;
+      const uploadSubjId = document.getElementById("uploadSubjectSelect").value;
+      loadDocuments(subjIdFilter || uploadSubjId); // Reload lại danh sách
+    } else {
+      alert("❌ " + data.message);
+    }
+  } catch (e) {
+    alert("❌ Lỗi kết nối khi xóa.");
+  }
+}
+
 // ── Exam/Quiz Handlers ──
-async function openExam(subjectId, subjectName) {
+async function openExam(el) {
+  const card = el.closest(".subject-card");
+  const subjectId = card.dataset.id;
+  const subjectName = card.dataset.name;
+
   const section = document.getElementById("exam-section");
   const content = document.getElementById("exam-content");
   if (!section || !content) return;
@@ -380,13 +410,17 @@ async function startRetake(examId, examName) {
   } catch (e) { alert("❌ Lỗi kết nối."); }
 }
 
-function openQuizSection(subjectId, subjectName) {
+function openQuizSection(el) {
+  const card = el.closest(".subject-card");
+  const subjectId = card.dataset.id;
+  const subjectName = card.dataset.name;
+
   showSection("quiz", null);
   document.querySelectorAll(".nav-item").forEach((n) => n.classList.remove("active"));
   const qs = document.getElementById("quizSubjectSelect");
   if (qs) {
     qs.value = subjectId;
-    loadExamHistory(subjectId);
+    onQuizSubjectChange(subjectId); // Trigger data load
   }
 }
 
@@ -806,12 +840,14 @@ async function submitAddSubject(e) {
     if (resp.status === "success") { closeModal(); location.reload(); } else alert("Lỗi: " + JSON.stringify(resp.message));
   } catch (e) { alert("Lỗi kết nối."); }
 }
-async function deleteSubject(id, btn) {
+async function deleteSubject(el) {
+  const card = el.closest(".subject-card");
+  const id = card.dataset.id;
   if (!confirm("Bạn có chắc muốn xóa môn học này?")) return;
   try {
     const res = await fetch(`/api/subject/${id}/delete/`, { method: "POST", headers: { "X-CSRFToken": csrfToken } });
     const data = await res.json();
-    if (data.status === "success" && btn) btn.closest(".subject-card").remove();
+    if (data.status === "success") card.remove();
   } catch (e) { alert("Lỗi xóa môn học."); }
 }
 
@@ -841,7 +877,7 @@ function renderStatsCards(overall) {
   if (ses) ses.textContent = overall.total_sessions || 0;
   if (avg) avg.textContent = overall.avg_score ? overall.avg_score + '/10' : '–';
   if (bst) bst.textContent = overall.best_score ? overall.best_score + '/10' : '–';
-  if (act) act.textContent = overall.active_days_14 + ' ngày';
+  if (act) act.textContent = overall.active_days_30 + ' ngày';
 }
 
 function renderActivityChart(days) {
@@ -855,7 +891,7 @@ function renderActivityChart(days) {
     type: 'bar', data: {
       labels: days.map(d => d.label),
       datasets: [{
-        label: 'Hoạt động', data: days.map(d => d.count),
+        label: 'Hoạt động (30 ngày)', data: days.map(d => d.count),
         backgroundColor: days.map(d => d.count > 0 ? 'rgba(139,92,246,0.7)' : 'rgba(255,255,255,0.05)'),
         borderRadius: 6, borderSkipped: false,
       }],

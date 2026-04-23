@@ -4,16 +4,9 @@ from django.contrib.auth.models import User
 
 class Subject(models.Model):
     ICON_CHOICES = [
-        ('📐', 'Mathematics'),
-        ('⚛️', 'Physics'),
-        ('🧪', 'Chemistry'),
-        ('🌿', 'Biology'),
-        ('💻', 'Computer Science'),
-        ('📖', 'Literature'),
-        ('🌍', 'History'),
-        ('🗣️', 'English'),
-        ('📊', 'Economics'),
-        ('🔬', 'Science'),
+        ('�', 'Đại cương'),
+        ('🎓', 'Chuyên Ngành'),
+        ('⭐', 'Tự chọn'),
     ]
     name = models.CharField(max_length=100)
     icon = models.CharField(max_length=10, default='📚')
@@ -61,6 +54,7 @@ class ChatMessage(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, blank=True, related_name='chat_messages')
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
     content = models.TextField()
+    retrieved_context = models.JSONField(null=True, blank=True)  # Lưu list chunks RAG đã dùng
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -85,7 +79,6 @@ class ExamResult(models.Model):
 
 
 class ExamSession(models.Model):
-    """Lưu chi tiết một phiên thi thử có chấm điểm từng câu."""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='exam_sessions')
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='exam_sessions')
     # JSON: list of {question, options: [A,B,C,D], correct_answer, explanation}

@@ -1,7 +1,3 @@
-"""
-ML Services – Phân tích điểm yếu học sinh bằng Machine Learning
-Sử dụng: TF-IDF + K-Means Clustering + Gemini AI labeling
-"""
 
 import json
 import numpy as np
@@ -143,6 +139,7 @@ def cluster_wrong_questions(wrong_questions, n_clusters=None):
         top_keyword_indices = cluster_tfidf.argsort()[-5:][::-1]
         top_keywords = [feature_names[i] for i in top_keyword_indices if cluster_tfidf[i] > 0]
 
+
         clusters.append({
             'cluster_id': cluster_id,
             'topic_keywords': top_keywords,
@@ -170,10 +167,6 @@ def cluster_wrong_questions(wrong_questions, n_clusters=None):
 
 
 def generate_weakness_report(user, subject=None):
-    """
-    Tạo báo cáo tổng hợp điểm yếu cho user.
-    Returns dict sẵn sàng trả về JSON cho frontend.
-    """
     # Thu thập câu sai
     wrong_qs = collect_wrong_questions(user, subject)
 
@@ -183,7 +176,6 @@ def generate_weakness_report(user, subject=None):
             'message': 'Chưa có dữ liệu. Bạn cần thi thử ít nhất 1 lần!',
             'total_wrong': 0,
         }
-
     # Clustering
     result = cluster_wrong_questions(wrong_qs)
 
@@ -193,7 +185,6 @@ def generate_weakness_report(user, subject=None):
             'message': result.get('message', 'Không đủ dữ liệu để phân tích.'),
             'total_wrong': result['total_wrong'],
         }
-
     # Thống kê tổng quan
     sessions = ExamSession.objects.filter(user=user, is_submitted=True)
     if subject:

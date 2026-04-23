@@ -13,3 +13,6 @@ google-genai
 django-environ
 pypdf
 langchain-text-splitters
+scikit-learn
+numpy
+easyocr

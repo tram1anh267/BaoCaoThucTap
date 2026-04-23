@@ -37,13 +37,13 @@
             📝 Thi Thử Online
           </div>
           <div class="nav-item" onclick="showSection('history', this)">
-            💬 Lịch Sử Chat
+            💬 Lịch Sử Chatbot
           </div>
           <div class="nav-item" onclick="showSection('ml', this)">
-            🧠 Phân tích ML
+            🧠 Phân tích điểm yếu
           </div>
           <div class="nav-item" onclick="showSection('summary', this)">
-            📝 Tóm tắt AI
+            📝 Tóm tắt nhanh
           </div>
         </nav>
 
@@ -64,10 +64,12 @@
 
         <div class="upgrade-card">
           <strong>EduFlow Pro</strong>
-          <p>AI ghi nhớ hội thoại & phân tích điểm yếu.</p>
+          <p>Contact: 0849091123 ^^</p>
         </div>
 
-        <a href="{% url 'logout' %}" class="logout-btn">🚪 Đăng xuất</a>
+        <a href="{% url 'logout' %}" class="logout-btn"
+          >🚪 Đăng xuất khỏi đây</a
+        >
       </aside>
 
       <!-- ── Main Content ── -->
@@ -171,7 +173,9 @@
             {% for subject in subjects %}
             <div
               class="glass-panel subject-card"
-              onclick="selectSubject({{ subject.id }}, '{{ subject.name }}')"
+              data-id="{{ subject.id }}"
+              data-name="{{ subject.name|escapejs }}"
+              onclick="selectSubject(event, this)"
             >
               <div class="icon-box">{{ subject.icon }}</div>
               <h3>{{ subject.name }}</h3>
@@ -179,20 +183,29 @@
               <div class="card-actions">
                 <button
                   class="btn-primary-sm"
-                  onclick="event.stopPropagation(); openExam({{ subject.id }}, '{{ subject.name }}')"
+                  onclick="
+                    event.stopPropagation();
+                    openExam(this);
+                  "
                 >
                   📝 Sinh đề
                 </button>
                 <button
                   class="btn-primary-sm"
                   style="background: linear-gradient(135deg, #059669, #0d9488)"
-                  onclick="event.stopPropagation(); openQuizSection({{ subject.id }}, '{{ subject.name }}')"
+                  onclick="
+                    event.stopPropagation();
+                    openQuizSection(this);
+                  "
                 >
                   🎯 Thi thử
                 </button>
                 <button
                   class="btn-danger-sm"
-                  onclick="event.stopPropagation(); deleteSubject({{ subject.id }}, this)"
+                  onclick="
+                    event.stopPropagation();
+                    deleteSubject(this);
+                  "
                 >
                   🗑️
                 </button>
@@ -233,9 +246,7 @@
         <section id="section-upload" style="display: none">
           <header class="animate-fade-in">
             <h1>Upload Tài Liệu 📤</h1>
-            <p class="subtitle">
-              Tải lên tài liệu – AI tự phân loại hoặc bạn chọn thủ công.
-            </p>
+            <p class="subtitle"></p>
           </header>
           <div class="glass-panel upload-box animate-fade-in">
             <div class="form-group-inline">
@@ -257,11 +268,10 @@
                   margin-bottom: 0.4rem;
                   display: block;
                 "
-                >📁 Phân loại tài liệu (AI tự động hoặc chọn tay):</label
+                >📁 Phân loại tài liệu (Chọn chức năng tương ứng):</label
               >
               <div class="category-chips" id="categoryChips">
-                <div class="chip active" data-cat="">🤖 AI tự phân loại</div>
-                <div class="chip" data-cat="Theory">📖 Lý thuyết</div>
+                <div class="chip active" data-cat="Theory">📖 Lý thuyết</div>
                 <div class="chip" data-cat="Slide">🖥️ Slide bài giảng</div>
                 <div class="chip" data-cat="Textbook">📗 Giáo trình</div>
                 <div class="chip" data-cat="Examples">💡 Ví dụ minh họa</div>
@@ -277,7 +287,10 @@
               onclick="document.getElementById('fileInput').click()"
             >
               <div class="drop-icon">☁️</div>
-              <p>Kéo thả file vào đây hoặc <strong>click để chọn</strong></p>
+              <p>
+                Kéo thả file vào đây nhé tình iu hoặc
+                <strong>click để chọn</strong>
+              </p>
               <p class="drop-hint">Hỗ trợ: PDF, JPG, PNG (tối đa 20MB)</p>
               <input
                 type="file"
@@ -375,7 +388,7 @@
                 "
                 onclick="switchQuizTab('retake')"
               >
-                📜 Thi lại đề已 upload
+                📜 Thi lại đề đã upload
               </button>
             </div>
 
@@ -630,6 +643,6 @@
       const csrfToken = "{{ csrf_token }}";
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="{% static 'study/js/dashboard.js' %}"></script>
+    <script src="{% static 'study/js/dashboard.js' %}?v=2"></script>
   </body>
 </html>

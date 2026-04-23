@@ -44,8 +44,8 @@ class RegisterForm(UserCreationForm):
             user.save()
             # Create default subjects for new user
             default_subjects = [
-                {'name': 'Mathematics', 'icon': '📐'},
-                {'name': 'Physics', 'icon': '⚛️'},
+                {'name': 'Đại cương', 'icon': '📚'},
+                {'name': 'Chuyên Ngành', 'icon': '🎓'},
             ]
             for s in default_subjects:
                 Subject.objects.create(owner=user, name=s['name'], icon=s['icon'])
@@ -67,16 +67,9 @@ class LoginForm(AuthenticationForm):
 
 class SubjectForm(forms.ModelForm):
     ICON_OPTIONS = [
-        ('📐', '📐 Mathematics'),
-        ('⚛️', '⚛️ Physics'),
-        ('🧪', '🧪 Chemistry'),
-        ('🌿', '🌿 Biology'),
-        ('💻', '💻 Computer Science'),
-        ('📖', '📖 Literature'),
-        ('🌍', '🌍 History'),
-        ('🗣️', '🗣️ English'),
-        ('📊', '📊 Economics'),
-        ('📚', '📚 Other'),
+        ('📚', '📚 Đại cương'),
+        ('🎓', '🎓 Chuyên Ngành'),
+        ('⭐', '⭐ Tự chọn'),
     ]
     icon = forms.ChoiceField(choices=ICON_OPTIONS, widget=forms.Select(attrs={'class': 'auth-input'}))
 

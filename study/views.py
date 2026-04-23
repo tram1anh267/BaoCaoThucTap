@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.conf import settings
-from .services import extract_text, classify_text, index_document, get_answer, generate_mock_exam, generate_exam_json, parse_exam_from_text, generate_weakness_exam_json
+from .services import extract_text, index_document, get_answer, generate_mock_exam, generate_exam_json, parse_exam_from_text, generate_weakness_exam_json
 from .models import Subject, Document, ChatMessage, ExamResult, ExamSession, UploadedExam
 from .ml_services import generate_weakness_report, summarize_document
 from .forms import RegisterForm, LoginForm, SubjectForm
@@ -128,12 +128,12 @@ def upload_file(request):
 
             print(f"Processing file: {file_path}")
             text = extract_text(file_path)
-            category = classify_text(text)
-
-            # Cho phép user override category (nếu họ chọn thủ công)
+            # Cho phép user chọn thư mục lưu trữ thủ công
             user_category = request.POST.get('category', '').strip()
             if user_category in ['Theory', 'Slide', 'Textbook', 'Examples', 'Exercises', 'PastExam', 'Other']:
                 category = user_category
+            else:
+                category = 'Other'
 
             # Move to final folder
             final_dir = os.path.join(settings.MEDIA_ROOT, 'subjects', str(request.user.id), subject.name, category)
@@ -222,14 +222,15 @@ def chat(request):
             history = list(reversed(recent_msgs))
             history_text = "\n".join([f"{'Người học' if m.role == 'user' else 'AI'}: {m.content}" for m in history[:-1]])
 
-            answer = get_answer(subject.name, query, history_text, str(request.user.id))
+            answer, retrieved_chunks = get_answer(subject.name, query, history_text, str(request.user.id))
 
-            # Save AI response
+            # Save AI response (kèm theo các chunks RAG đã dùng)
             ChatMessage.objects.create(
                 user=request.user,
                 subject=subject,
                 role='ai',
-                content=answer
+                content=answer,
+                retrieved_context=retrieved_chunks if retrieved_chunks else None
             )
 
             return JsonResponse({'answer': answer})
@@ -276,6 +277,22 @@ def documents_list(request, subject_id):
     docs = Document.objects.filter(subject=subject, owner=request.user)
     data = [{'id': d.id, 'filename': d.filename, 'category': d.category, 'uploaded_at': d.uploaded_at.strftime('%Y-%m-%d %H:%M')} for d in docs]
     return JsonResponse({'documents': data})
+
+
+@login_required
+def delete_document(request, doc_id):
+    if request.method == 'POST':
+        doc = get_object_or_404(Document, id=doc_id, owner=request.user)
+        try:
+            # Xóa file trong ổ cứng
+            if doc.file_path and os.path.exists(doc.file_path):
+                os.remove(doc.file_path)
+            # Xóa trong cơ sở dữ liệu (tự động xóa các UploadedExam liên quan)
+            doc.delete()
+            return JsonResponse({'status': 'success', 'message': 'Đã xóa tài liệu.'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'Lỗi khi xóa: {str(e)}'})
+    return JsonResponse({'status': 'error', 'message': 'Dữ liệu không hợp lệ.'})
 
 
 # ─────────────────────────────────────────────────────────
@@ -370,7 +387,6 @@ def start_exam_session(request, subject_id):
 
 @login_required
 def submit_exam_session(request, session_id):
-    """Nhận bài làm, chấm điểm, lưu kết quả chi tiết."""
     session = get_object_or_404(ExamSession, id=session_id, user=request.user)
     if session.is_submitted:
         return JsonResponse({'status': 'error', 'message': 'Bài thi đã được nộp rồi.'})
@@ -455,7 +471,6 @@ def uploaded_exams_list(request, subject_id):
 
 @login_required
 def weakness_analysis(request, subject_id=None):
-    """Phân tích điểm yếu bằng ML (TF-IDF + K-Means)."""
     try:
         subject = None
         if subject_id:
@@ -470,7 +485,6 @@ def weakness_analysis(request, subject_id=None):
 @login_required
 @csrf_exempt
 def practice_weakness(request, subject_id):
-    """Sinh bài luyện tập dựa trên nhóm câu hỏi điểm yếu (ML cluster)."""
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
 
@@ -561,20 +575,19 @@ def dashboard_stats(request):
 
     user = request.user
     now = timezone.now()
-    days_14 = now - timedelta(days=14)
     days_30 = now - timedelta(days=30)
 
-    # ── 1. Activity heatmap: số phiên thi + chat mỗi ngày (14 ngày) ──
+    # ── 1. Activity heatmap: số phiên thi + chat mỗi ngày (30 ngày) ──
     exam_by_day = (
         ExamSession.objects
-        .filter(user=user, started_at__gte=days_14, is_submitted=True)
+        .filter(user=user, started_at__gte=days_30, is_submitted=True)
         .annotate(day=TruncDate('started_at'))
         .values('day')
         .annotate(cnt=Count('id'))
     )
     chat_by_day = (
         ChatMessage.objects
-        .filter(user=user, role='user', created_at__gte=days_14)
+        .filter(user=user, role='user', created_at__gte=days_30)
         .annotate(day=TruncDate('created_at'))
         .values('day')
         .annotate(cnt=Count('id'))
@@ -588,8 +601,8 @@ def dashboard_stats(request):
         activity_map[key] = activity_map.get(key, 0) + r['cnt']
 
     activity_days = []
-    for i in range(14):
-        day = (now - timedelta(days=13-i)).date()
+    for i in range(30):
+        day = (now - timedelta(days=29-i)).date()
         key = day.strftime('%Y-%m-%d')
         activity_days.append({
             'date': key,
@@ -669,6 +682,6 @@ def dashboard_stats(request):
             'total_sessions': total_sessions,
             'avg_score': round(avg_score_all, 1),
             'best_score': round(best_score, 1),
-            'active_days_14': active_days,
+            'active_days_30': active_days,
         },
     })
