@@ -27,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-85inz!_c#qw8_czz598p(-(2t*51fz#p5kyvi(3qn6h*%j*u&5")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG", "False") == "True"
+DEBUG = os.environ.get("DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
 
@@ -126,7 +126,10 @@ STATIC_URL = "static/"
 # ─── Frontend: tìm static files trong frontend/static/ ───
 STATICFILES_DIRS = [BASE_DIR / "frontend" / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# Chỉ dùng Whitenoise Storage nén file khi ở Production (DEBUG=False)
+if not DEBUG:
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -146,21 +149,16 @@ LOGOUT_REDIRECT_URL = '/login/'
 # ─────────────────────────────────────────────────────────
 # CSRF – Fix cho production deploy (Railway)
 # ─────────────────────────────────────────────────────────
-_csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
-if _csrf_origins:
-    CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_origins.split(",")]
-else:
-    CSRF_TRUSTED_ORIGINS = [
-        "https://*.railway.app",
-        "https://*.up.railway.app",
-    ]
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.railway.app",
+    "https://*.up.railway.app",
+    "https://web-production-8e0b2.up.railway.app",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
 
-# Messages framework
-from django.contrib.messages import constants as message_constants
-MESSAGE_TAGS = {
-    message_constants.DEBUG: 'debug',
-    message_constants.INFO: 'info',
-    message_constants.SUCCESS: 'success',
-    message_constants.WARNING: 'warning',
-    message_constants.ERROR: 'error',
-}
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
