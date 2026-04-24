@@ -224,15 +224,14 @@ def chat(request):
             history = list(reversed(recent_msgs))
             history_text = "\n".join([f"{'Người học' if m.role == 'user' else 'AI'}: {m.content}" for m in history[:-1]])
 
-            answer, retrieved_chunks = get_answer(subject.name, query, history_text, str(request.user.id))
+            answer = get_answer(subject.name, query, history_text, str(request.user.id))
 
             # Save AI response (kèm theo các chunks RAG đã dùng)
             ChatMessage.objects.create(
                 user=request.user,
                 subject=subject,
                 role='ai',
-                content=answer,
-                retrieved_context=retrieved_chunks if retrieved_chunks else None
+                content=answer
             )
 
             return JsonResponse({'answer': answer})

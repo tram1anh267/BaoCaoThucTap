@@ -1,5 +1,4 @@
 // ── DASHBOARD STATE & LOGIC ──
-
 let activeSubjectId = null;
 let activeSubjectName = "";
 let chatOpen = false;
@@ -650,8 +649,8 @@ async function runSummarize() {
   const btn = document.getElementById("summarizeBtn");
   const container = document.getElementById("summary-results");
   if (!docId) { alert("Vui lòng chọn tài liệu!"); return; }
-  btn.disabled = true; btn.innerHTML = "⏳ Đang tóm tắt (Extractive + Abstractive)...";
-  container.innerHTML = '<p style="color:var(--text-muted)">Đang chạy TF-IDF + TextRank và Gemini AI...</p>';
+  btn.disabled = true; btn.innerHTML = "⏳ AI đang đọc và tóm tắt tài liệu...";
+  container.innerHTML = '<p style="color:var(--text-muted)">Đang sử dụng Gemini AI để phân tích nội dung cốt lõi...</p>';
   try {
     const res = await fetch(`/api/summarize/${docId}/`);
     const data = await res.json();
@@ -663,40 +662,39 @@ async function runSummarize() {
 
 function renderSummaryResults(data) {
   const container = document.getElementById("summary-results");
-  const ds = data.document_stats; const ext = data.extractive; const abs = data.abstractive;
+  const ds = data.document_stats;
+  
   let html = `
-      <div style="padding:0.8rem 1rem; background:rgba(6,182,212,0.06); border-left:3px solid #06b6d4; border-radius:0 8px 8px 0; margin-bottom:1.5rem; font-size:0.85rem; color:#67e8f9">
-        <strong>📄 ${data.document_name}</strong> · ${ds.word_count.toLocaleString()} từ · ${ds.sentence_count} câu · ${ds.tfidf_features} TF-IDF features
+      <div style="padding:1rem; background:rgba(6,182,212,0.06); border-left:4px solid #06b6d4; border-radius:0 12px 12px 0; margin-bottom:1.5rem; font-size:0.9rem; color:#67e8f9">
+        <div style="display:flex; justify-content:space-between; align-items:center">
+            <span><strong>📄 Tài liệu:</strong> ${data.document_name}</span>
+            <span style="font-size:0.8rem; background:rgba(255,255,255,0.05); padding:0.2rem 0.6rem; border-radius:6px">
+                ${ds.word_count.toLocaleString()} từ · ${ds.char_count.toLocaleString()} ký tự
+            </span>
+        </div>
       </div>
-      <div style="background:rgba(139,92,246,0.05); border:1px solid rgba(139,92,246,0.15); border-radius:14px; padding:1.5rem; margin-bottom:1.5rem">
-        <h3 style="color:#a78bfa; margin-bottom:0.3rem">🔬 Extractive Summary (ML)</h3>
-        <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:1rem">Thuật toán: ${ext.algorithm} · Chọn ${ext.num_selected} câu quan trọng nhất</div>
-        <div style="color:#e2e8f0; line-height:1.8; font-size:0.92rem; margin-bottom:1.2rem; padding:1rem; background:rgba(255,255,255,0.03); border-radius:8px">${ext.summary}</div>
-        <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.5rem">📊 TextRank Scores:</div>`;
-  ext.top_sentences.forEach((s) => {
-    const barW = Math.min(s.score * 2000, 100);
-    html += `
-        <div style="margin-bottom:1rem; padding:0.8rem; background:rgba(255,255,255,0.02); border-radius:8px">
-          <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:#c4b5fd; margin-bottom:0.3rem">
-            <span>Câu ${s.original_index + 1}</span><span>Score: ${s.score}</span>
-          </div>
-          <div style="height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden; margin-bottom:0.5rem">
-            <div style="height:100%; width:${barW}%; background:linear-gradient(90deg,#8b5cf6,#06b6d4); border-radius:3px"></div>
-          </div>
-          <div style="font-size:0.82rem; color:#94a3b8; line-height:1.5; font-style:italic">"${s.sentence}"</div>
-        </div>`;
-  });
-  html += `</div>
-      <div style="background:rgba(6,182,212,0.05); border:1px solid rgba(6,182,212,0.15); border-radius:14px; padding:1.5rem; margin-bottom:1.5rem">
-        <h3 style="color:#67e8f9; margin-bottom:0.3rem">🤖 Abstractive Summary (Gemini AI)</h3>
-        <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:1rem">Model: ${abs.algorithm}${abs.truncated_input ? " · ⚠️ Input đã được cắt ngắn (>8000 ký tự)" : ""}</div>
-        <div style="color:#e2e8f0; line-height:1.8; font-size:0.92rem; padding:1rem; background:rgba(255,255,255,0.03); border-radius:8px; white-space:pre-line">${abs.summary}</div>
+
+      <div style="background:rgba(6,182,212,0.04); border:1px solid rgba(6,182,212,0.15); border-radius:16px; padding:1.8rem; margin-bottom:1.5rem; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3)">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem">
+            <h3 style="color:#67e8f9; margin:0; display:flex; align-items:center; gap:10px">
+                <span style="font-size:1.5rem">🤖</span> Tóm tắt thông minh bằng Gemini AI
+            </h3>
+            <span style="font-size:0.75rem; color:var(--text-muted); background:rgba(255,255,255,0.03); padding:0.3rem 0.7rem; border-radius:20px; border:1px solid rgba(255,255,255,0.05)">
+                Model: ${data.model}
+            </span>
+        </div>
+        
+        <div style="color:#e2e8f0; line-height:1.8; font-size:1rem; padding:1.2rem; background:rgba(15,23,42,0.5); border-radius:12px; white-space:pre-line; border:1px solid rgba(255,255,255,0.03)">
+            ${data.summary}
+        </div>
       </div>
-      <div style="padding:1.5rem; background:linear-gradient(135deg,rgba(139,92,246,0.08),rgba(6,182,212,0.08)); border-radius:14px; border:1px solid rgba(139,92,246,0.15); text-align:center">
-        <div style="font-size:1.5rem; margin-bottom:0.5rem">⚖️</div><div style="color:#e2e8f0; font-weight:600; margin-bottom:0.5rem">So sánh 2 phương pháp</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; text-align:left; font-size:0.85rem; color:#94a3b8">
-          <div><div style="color:#a78bfa; font-weight:600; margin-bottom:0.3rem">🔬 Extractive</div><ul style="margin:0; padding-left:1.2rem; line-height:1.6"><li>Trích xuất câu nguyên gốc</li><li>Dùng TF-IDF + Graph ranking</li><li>Không cần AI, chạy offline</li></ul></div>
-          <div><div style="color:#67e8f9; font-weight:600; margin-bottom:0.3rem">🤖 Abstractive</div><ul style="margin:0; padding-left:1.2rem; line-height:1.6"><li>Viết lại bằng ngôn ngữ mới</li><li>Dùng Gemini LLM</li><li>Tự nhiên, có cấu trúc hơn</li></ul></div>
+
+      <div style="padding:1.5rem; background:linear-gradient(135deg,rgba(139,92,246,0.12),rgba(6,182,212,0.12)); border-radius:16px; border:1px solid rgba(6,182,212,0.2); text-align:center">
+        <div style="font-size:1.8rem; margin-bottom:0.8rem">💡</div>
+        <div style="color:#f8fafc; font-weight:700; margin-bottom:0.5rem; font-size:1.1rem">Mẹo học tập</div>
+        <div style="color:#94a3b8; font-size:0.92rem; line-height:1.6; max-width:600px; margin:0 auto">
+            Bản tóm tắt trên đã được AI chọn lọc những ý quan trọng nhất. 
+            Bạn hãy sử dụng tính năng <strong>Chat AI</strong> để hỏi sâu hơn về các mục bạn chưa rõ nhé!
         </div>
       </div>`;
   container.innerHTML = html;

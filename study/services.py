@@ -118,7 +118,6 @@ def index_document(text, metadata):
 
 
 def retrieve_context(subject_name: str, user_id: str, query: str) -> str:
-    """Tìm kiếm các đoạn tài liệu liên quan từ ChromaDB."""
     if not os.path.exists(persist_directory) or not os.listdir(persist_directory):
         return ""
     
@@ -127,30 +126,27 @@ def retrieve_context(subject_name: str, user_id: str, query: str) -> str:
     try:
         vector_db = Chroma(persist_directory=persist_directory, embedding_function=embeddings)
         
-        # 1. Filter theo user + subject (dùng $and cho multi-filter)
+        # CHỈ TÌM TRONG MÔN HỌC NÀY CỦA USER NÀY
+        # Không dùng fallback "không filter" để tránh nhầm tài liệu
         docs = vector_db.as_retriever(
             search_kwargs={
-                "filter": {"$and": [{"user_id": user_id}, {"subject": subject_lower}]},
-                "k": 2
+                "filter": {
+                    "$and": [
+                        {"user_id": user_id},
+                        {"subject": subject_lower}
+                    ]
+                },
+                "k": 4 # Tăng lên 4 chunks để AI có nhiều dữ liệu hơn
             }
         ).invoke(query)
         
-        # 2. Fallback: chỉ filter subject
-        if not docs:
-            docs = vector_db.as_retriever(
-                search_kwargs={"filter": {"subject": subject_lower}, "k": 2}
-            ).invoke(query)
-        
-        # 3. Fallback cuối: không filter, tìm theo semantic similarity
-        if not docs:
-            docs = vector_db.as_retriever(
-                search_kwargs={"k": 2}
-            ).invoke(query)
-        
         if docs:
             context = "\n\n---\n\n".join([doc.page_content for doc in docs])
-            print(f"RAG found {len(docs)} chunks for '{subject_name}'")
+            print(f"RAG found {len(docs)} chunks for '{subject_name}' (User: {user_id})")
             return context
+        else:
+            print(f"RAG No docs found for subject: {subject_lower}")
+            
     except Exception as e:
         print(f"Vector DB Error (skipped): {e}")
     return ""

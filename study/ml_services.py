@@ -287,7 +287,7 @@ def generate_weakness_report(user, subject=None):
     }
 
 # ─────────────────────────────────────────────────────────
-# Text Summarization – Extractive (TF-IDF + TextRank) + Abstractive (Gemini)
+# Text Summarization – Abstractive (Gemini)
 # ─────────────────────────────────────────────────────────
 
 import re
@@ -300,195 +300,65 @@ _summary_client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 _SUMMARY_MODEL = os.getenv("MODEL_NAME", "gemini-2.0-flash-lite")
 
 
-def _split_sentences(text):
-    """Tach text thanh danh sach cau (loai bo ky tu nhieu tu slide/PDF)."""
-    # Loai bo email va URL, loai cac day so dai
-    text = re.sub(r'\S+@\S+', '', text)
-    text = re.sub(r'http\S+', '', text)
-    text = re.sub(r'\b\d{8,}\b', '', text)  # day so > 8 ky tu (SDT, footer)
-    
-    # Noi cac cau bi ngat dong giua chung trong PDF
-    text = re.sub(r'(?<!\n)\n(?!\n)', ' ', text)
-    
-    # Giam khoang trang
-    text = re.sub(r'\s+', ' ', text)
-    
-    # Tach bang dau cau
-    raw = re.split(r'(?<=[.!?])\s+', text)
-    
-    sentences = []
-    seen = set()
-    for s in raw:
-        s = s.strip()
-        # Filter 1: do dai toi thieu 30 ky tu, it nhat 6 tu tieng Viet
-        if len(s) > 30 and len(s.split()) >= 6:
-            # Filter 2: khong de lot cau toan so hay ki tu dac biet
-            if not re.match(r'^[\d\W_]+$', s):
-                if s not in seen:
-                    sentences.append(s)
-                    seen.add(s)
-                    
-    # Fallback neu lo loc het sach (vd slide chi chua phrase ngan)
-    if not sentences:
-        raw_fallback = re.split(r'\n+', text)
-        sentences = [s.strip() for s in raw_fallback if len(s.strip()) > 15]
-        
-    return sentences
-
-
-def textrank_extractive_summary(text, num_sentences=5):
-    """
-    Extractive Summarization bang TF-IDF + TextRank (graph-based).
-    
-    Quy trinh:
-    1. Tach van ban thanh cau
-    2. TF-IDF vectorization cho tung cau
-    3. Xay dung ma tran cosine similarity (do thi)
-    4. Tinh TextRank score cho moi cau (tuong tu PageRank)
-    5. Chon top-N cau quan trong nhat
-    """
-    sentences = _split_sentences(text)
-
-    if len(sentences) <= num_sentences:
-        return {
-            'extractive_summary': ' '.join(sentences),
-            'top_sentences': [{'sentence': s, 'score': 1.0, 'original_index': i}
-                              for i, s in enumerate(sentences)],
-            'total_sentences': len(sentences),
-            'tfidf_features': 0,
-        }
-
-    # TF-IDF Vectorization
-    vectorizer = TfidfVectorizer(
-        max_features=500,
-        ngram_range=(1, 2),
-        min_df=1,
-        max_df=0.95,
-    )
-    tfidf_matrix = vectorizer.fit_transform(sentences)
-    n_features = len(vectorizer.get_feature_names_out())
-
-    # Cosine Similarity Matrix (Graph adjacency)
-    from sklearn.metrics.pairwise import cosine_similarity
-    sim_matrix = cosine_similarity(tfidf_matrix)
-
-    # TextRank Algorithm (Power iteration)
-    n = len(sentences)
-    damping = 0.85
-    scores = np.ones(n) / n
-    
-    # Normalize similarity matrix (row-wise -> transition matrix)
-    row_sums = sim_matrix.sum(axis=1, keepdims=True)
-    row_sums[row_sums == 0] = 1
-    transition = sim_matrix / row_sums
-
-    # Power iteration (30 rounds)
-    for _ in range(30):
-        new_scores = (1 - damping) / n + damping * transition.T @ scores
-        if np.linalg.norm(new_scores - scores) < 1e-6:
-            break
-        scores = new_scores
-
-    # Top-N sentences
-    ranked_indices = scores.argsort()[::-1][:num_sentences]
-    ranked_indices_sorted = sorted(ranked_indices)
-
-    top_sentences = []
-    for idx in ranked_indices_sorted:
-        top_sentences.append({
-            'sentence': sentences[idx],
-            'score': round(float(scores[idx]), 4),
-            'original_index': int(idx),
-        })
-
-    extractive_summary = ' '.join([sentences[i] for i in ranked_indices_sorted])
-
-    return {
-        'extractive_summary': extractive_summary,
-        'top_sentences': top_sentences,
-        'total_sentences': len(sentences),
-        'tfidf_features': n_features,
-    }
-
-
 def abstractive_summary_gemini(text, max_length=500):
     """
-    Abstractive Summarization bang Gemini AI.
-    AI doc toan bo van ban va viet tom tat moi bang ngon ngu tu nhien.
+    Abstractive Summarization bằng Gemini AI.
+    AI đọc toàn bộ văn bản và viết tóm tắt mới bằng ngôn ngữ tự nhiên.
     """
-    truncated = text[:8000] if len(text) > 8000 else text
+    truncated = text[:12000] if len(text) > 12000 else text
 
-    prompt = f"""Ban la chuyen gia tom tat tai lieu hoc thuat. 
-Hay tom tat noi dung sau day bang tieng Viet, ngan gon va co cau truc:
+    prompt = f"""Bạn là chuyên gia tóm tắt tài liệu học thuật. 
+Hay tóm tắt nội dung sau đây bằng tiếng Việt, ngắn gọn và có cấu trúc:
 
-NGUYEN TAC:
-1. Tom tat trong khoang {max_length} tu.
-2. Giu nguyen cac thuat ngu chuyen nganh.
-3. Chia thanh cac muc chinh voi icon emoji.
-4. Liet ke cac y quan trong bang bullet points.
-5. Cuoi cung, ghi "Tu khoa chinh: ..." liet ke 5-8 tu khoa.
+NGUYÊN TẮC:
+1. Tóm tắt trong khoảng {max_length} từ.
+2. Giữ nguyên các thuật ngữ chuyên ngành.
+3. Chia thành các mục chính với icon emoji.
+4. Liệt kê các ý quan trọng bằng bullet points.
+5. Cuối cùng, ghi "Từ khóa chính: ..." liệt kê 5-8 từ khóa.
 
-NOI DUNG TAI LIEU:
+NỘI DUNG TÀI LIỆU:
 {truncated}
 
-TOM TAT:"""
+TÓM TẮT:"""
 
     try:
         response = _summary_client.models.generate_content(
             model=_SUMMARY_MODEL, contents=prompt
         )
         return {
-            'abstractive_summary': response.text.strip(),
-            'model_used': _SUMMARY_MODEL,
-            'input_length': len(text),
-            'truncated': len(text) > 8000,
+            'summary': response.text.strip(),
+            'model': _SUMMARY_MODEL,
         }
     except Exception as e:
-        print(f"Abstractive summary error: {e}")
+        print(f"Summarize error: {e}")
         return {
-            'abstractive_summary': f'Loi khi tom tat: {str(e)}',
-            'model_used': _SUMMARY_MODEL,
-            'input_length': len(text),
-            'truncated': False,
+            'summary': f'Lỗi khi tóm tắt: {str(e)}',
+            'model': _SUMMARY_MODEL,
         }
 
 
-def summarize_document(text, num_extractive=5):
+def summarize_document(text):
+    """
+    Tóm tắt tài liệu bằng Gemini AI.
+    """
     if not text or len(text.strip()) < 50:
         return {
             'status': 'error',
-            'message': 'Noi dung tai lieu qua ngan de tom tat.',
+            'message': 'Nội dung tài liệu quá ngắn để tóm tắt.',
         }
 
-    # Buoc 1: Extractive - TF-IDF + TextRank
-    extractive = textrank_extractive_summary(text, num_extractive)
+    # Gọi Gemini AI để tóm tắt
+    result = abstractive_summary_gemini(text)
 
-    # Buoc 2: Abstractive - Gemini AI
-    abstractive = abstractive_summary_gemini(text)
-
-    # Thong ke van ban
-    words = text.split()
-    word_count = len(words)
-    char_count = len(text)
-
+    # Trả về kết quả tinh gọn
     return {
         'status': 'success',
         'document_stats': {
-            'word_count': word_count,
-            'char_count': char_count,
-            'sentence_count': extractive['total_sentences'],
-            'tfidf_features': extractive['tfidf_features'],
+            'word_count': len(text.split()),
+            'char_count': len(text),
         },
-        'extractive': {
-            'algorithm': 'TF-IDF + TextRank (Cosine Similarity Graph)',
-            'summary': extractive['extractive_summary'],
-            'top_sentences': extractive['top_sentences'],
-            'num_selected': len(extractive['top_sentences']),
-        },
-        'abstractive': {
-            'algorithm': f'Gemini AI ({abstractive["model_used"]})',
-            'summary': abstractive['abstractive_summary'],
-            'truncated_input': abstractive['truncated'],
-        },
+        'summary': result['summary'],
+        'model': result['model'],
     }
 
