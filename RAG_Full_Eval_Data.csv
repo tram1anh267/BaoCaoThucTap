@@ -1,0 +1,299 @@
+﻿Subject,Question,Ground Truth ,Chat-bot-answer,Contexts
+Big data,Big data là gì,"Big Data là các   . Độ lớn đến mức các phần mềm xử lý dữ liệu truyền thống không có khả năng thu thập, quản lý và xử lý dữ liệu trong một khoảng thời gian hợp lý.
+VD: vài GB trong files excel chỉ là những dữ liệu có cấu trúc binh thường nên không gọi là lớn,","Chào bạn, mình là EduFlow AI. Dưới đây là giải đáp cho câu hỏi của bạn dựa trên tài liệu môn học:
+
+*   **Định nghĩa:** Big Data là các tập dữ liệu có khối lượng rất lớn và cấu trúc phức tạp.
+*   **Giới hạn xử lý:** Dữ liệu vượt quá khả năng thu thập, quản lý và xử lý của các phần mềm truyền thống trong khoảng thời gian hợp lý.
+*   **Tiêu chí nhận diện:** Theo tài liệu môn học, ""dữ liệu rất lớn"" thường ở mức vài trăm GB hoặc vài TB, và ""thời gian đáng kể"" để xử lý là từ 20 phút trở lên.
+*   **Ví dụ:** Các file Excel vài GB chỉ được coi là dữ liệu có cấu trúc thông thường, không được xếp vào nhóm Big Data.","['CHƯƠNG 1: GIỚI THIỆU VỀ BIG DATA\nSTT CÂU HỎI TRẢ LỜI\n1 BigData là gì? Big Data là các tập dữ liệu có khối lượng lớn và phức tạp. Độ lớn \nđến mức các phần mềm xử lý dữ liệu truyền thống không có khả \nnăng thu thập, quản lý và xử lý dữ liệu trong một khoảng thời gian\nhợp lý.\nVD: vài GB trong files excel chỉ là những dữ liệu có cấu trúc binh \nthường nên không gọi là lớn, \n2 Các thuộc tính của\nBigData theo mô \nhình 3V là gì?\nVolume (Khối lượng lớn): Đa số là dữ liệu phi cấu trúc, từ hàng', 'nào là “dữ liệu rất lớn”, thế nào là “mất thời gian đáng kể”?. Trả lời theo \nkinh nghiệm: “dữ liệu rất lớn” = vài trăm GB hoặc vài TB; “mất thời gian \nđáng kể” >= 20 phút). \nDownloaded by Hoàng Trâm Anh (tram1anh267@gmail.com)\nlOMoARcPSD|19839156\nProcessin\ng?\nVD: dữ liệu về truy cập internet của người dùng được hệ thống đẩy ra các \nfile logs bởi các ứng dụng. Các file này hàng ngày được thu thập về 1 hệ \nthống lưu trữ dữ liệu và được xử lý qua đêm, để có kết quả tổng hợp phục']"
+,What is MapReduce in Hadoop?,A programming model for processing large datasets in parallel,"Chào bạn, mình là EduFlow AI. Dưới đây là thông tin về MapReduce dựa trên tài liệu của bạn:
+
+*   **Định nghĩa:** MapReduce là một mô hình xử lý dữ liệu phân tán trong hệ thống Hadoop, được thiết kế để xử lý các tác vụ phức tạp bằng cách phân tách chúng thành các công việc nhỏ hơn.
+*   **Cơ chế hoạt động:** Các công việc này được phân phối đồng thời trên một cụm máy chủ, cho phép thực hiện xử lý song song trên các tập dữ liệu lớn một cách hiệu quả.
+*   **Quy trình:** Dữ liệu được xử lý qua các giai đoạn chính bao gồm Map (chia nhỏ và gắn key-value), sau đó đến Shuffle and Sort để chuyển dữ liệu đến các nút Reduce xử lý tiếp.
+*   **Vai trò:** Theo tài liệu môn học, mô hình này cực kỳ quan trọng vì khả năng tổ chức và tối ưu hóa hiệu suất xử lý trên hệ thống phân tán.","['tán\n- Là một mô hình xử lý dữ liệu phân tán trong hệ thống Hadoop. \nNó được thiết kế để xử lý các tác vụ lớn và phức tạp bằng cách \nphân tách chúng thành các công việc nhỏ hơn và phân phối chúng \ntrên một cụm máy chủ.\nVì sao nó lại quan trọng?\nQuá trình MapReduce tổ chức và phân phối các công việc xử lý \ntrên nhiều máy chủ trong một cụm Hadoop. Điều này cho phép xử \nlý song song và hiệu quả trên các tập dữ liệu lớn.\nChỉ được triển khai thực hiện trên hệ phân tán, làm sao để sử lý', 'thực hiện xử lý trên từng cặp này độc lập với nhau. Quá \ntrình Map chia nhỏ dữ liệu đầu vào thành các phần nhỏ \nhơn và gắn kết với key-value tương ứng. Kết quả của quá \ntrình Map là các cặp key-value tạo thành bởi quá trình Map\nđó.\n\uf0d8 Shuffle and Sort: Sau khi các quá trình Map hoàn thành, \ndữ liệu được chia thành các phần nhỏ và được gửi đến các \nnút Reduce để xử lý tiếp. Trước khi dữ liệu được chuyển \nđến Reduce, quá trình Shuffle và Sort xảy ra. Trong quá']"
+,What is the role of the NodeManager in YARN?,Manage resource allocation,"Trong tài liệu môn học, vai trò của **NodeManager** trong YARN bao gồm:
+
+*   **Báo cáo trạng thái:** Chịu trách nhiệm báo cáo tình trạng sức khỏe (health status) của node cho ResourceManager.
+*   **Quản lý tài nguyên:** Thực hiện giám sát và quản lý việc sử dụng tài nguyên (CPU, RAM) tại node đó.
+*   **Quản lý container:** Quản lý các container thực thi ứng dụng trên node theo yêu cầu từ ResourceManager và ApplicationMaster.","['Another\n \nResource\n \nNode\n \n \nc.\n \nYet\n \nAnother\n \nResource\n \nNavigator\n \n \nd.\n \nYielding\n \nApache\n \nResource\n \nNavigator\n \n \nCorrect\n \nanswer:\n \na.\n \nYet\n \nAnother\n \nResource\n \nNegotiator\n \nCâu  15  \n \nQuestion:\n \nIn\n \nYARN,\n \nwhat\n \nrole\n \ndoes\n \nthe\n \nNodeManager\n \nplay\n \nin\n \na\n \nHadoop\n \ncluster?\n \n \na.\n \nManaging\n \nresource\n \nallocation\n \n \nb.\n \nMonitoring\n \napplication\n \nprogress\n \n \nc.\n \nExecuting\n \nMapReduce\n \njobs\n \n \nd.\n \nReporting\n \nnode\n \nhealth\n \nstatus\n \n \nCorrect\n \nanswer:\n \nd.', 'd.\n \nNodeManager\n \n \nCorrect\n \nanswer:\n \nb.\n \nApplicationMaster\n \nCâu  12  \n \nQuestion:\n \nWhat\n \nis\n \nthe\n \nprimary\n \nfunction\n \nof\n \nthe\n \nResourceManager\n \nin\n \nYARN?\n \n \na.\n \nManage\n \ndata\n \nstorage\n \n \nb.\n \nExecute\n \nMapReduce\n \njobs\n \n \nc.\n \nManage\n \nresource\n \nallocation\n \n \nd.\n \nManage\n \nmetadata\n \n \nCorrect\n \nanswer:\n \nc.\n \nManage\n \nresource\n \nallocation\n \nCâu  13  \n \nQuestion:\n \nWhat\n \nis\n \nthe\n \nprimary\n \nfunction\n \nof\n \nthe\n \nNodeManager\n \nin\n \nYARN?\n \n \na.\n \nManaging\n \nresource']"
+,What is Cloud Computing?,"Cloud computing is a computing model that
+provides computer resources (hardware,
+software, services, data, etc.) to users via the
+internet.
+Cloud Computing refers to manipulating,
+configuring, and accessing the hardware and
+software resources remotely. It offers online
+data storage, infrastructure, and application.","Theo tài liệu môn học, Cloud Computing (Điện toán đám mây) là mô hình cung cấp các dịch vụ máy tính thông qua Internet.
+
+*   **Định nghĩa:** Là việc thao tác, cấu hình và truy cập từ xa vào các tài nguyên phần cứng, phần mềm, lưu trữ dữ liệu và hạ tầng ứng dụng.
+*   **Đặc điểm:** Người dùng không cần trực tiếp sở hữu hay quản lý các thiết bị vật lý; thay vào đó, các tài nguyên này được quản lý bởi nhà cung cấp dịch vụ trên các máy chủ từ xa.","['internet.\nCloud Computing refers to manipulating,\nconfiguring, and accessing the hardware and\nsoftware resources remotely. It offers online\ndata storage, infrastructure, and application.\n2\n3\nBenefits of Cloud Computing\n4\nCloud Computing Challenges\n4\nDeployment Models\nDeployment models define the type of access to the cloud, i.e., how the cloud is located?\nCloud can have any of the four types of access: Public, Private, Hybrid, Community\n6\nPublic Cloud', 'CLOUD COMPUTING\n-ĐIỆN TOÁN ĐÁM MÂY-\n0. TỔNG QUAN\n\uf0a7 Điện toán đám mây (cloud computing) là một mô hình cung cấp dịch vụ máy tính \ntrên mạng Internet, cho phép người dùng truy cập vào các tài nguyên tính toán, lưu\ntrữ, mạng và ứng dụng thông qua Internet mà không cần phải sở hữu và quản lý \nphần cứng và phần mềm tương ứng. Các tài nguyên này được lưu trữ và quản lý \ntrên các máy chủ từ xa của các nhà cung cấp dịch vụ điện toán đám mây, cho phép']"
+,What Big Data Application in Retail & E-commerce,"Predicting Spending
+• Personalizing Customer Experience
+• Forecasting Demand in Retail
+• Identifying Customers
+• Recommending Products
+• Analyzing Reviews","Dựa trên tài liệu môn học, các ứng dụng của Big Data trong lĩnh vực Bán lẻ và Thương mại điện tử bao gồm:
+
+*   **Dự báo nhu cầu (Forecasting Demand):** Phân tích dữ liệu để dự đoán xu hướng mua sắm, giúp tối ưu hóa quản lý kho hàng.
+*   **Cá nhân hóa trải nghiệm (Personalizing Customer Experience):** Tùy chỉnh nội dung và dịch vụ dựa trên hành vi, sở thích riêng biệt của từng khách hàng.
+*   **Định danh khách hàng (Identifying Customers):** Phân khúc và nhận diện tệp khách hàng mục tiêu để có chiến lược tiếp cận hiệu quả.
+*   **Gợi ý sản phẩm (Recommending Products):** Sử dụng thuật toán để đưa ra các đề xuất mua sắm phù hợp, giúp tăng tỷ lệ chuyển đổi.
+*   **Phân tích đánh giá (Analyzing Reviews):** Xử lý phản hồi từ người dùng để thấu hiểu cảm nhận khách hàng và cải thiện chất lượng dịch vụ.
+*   **Dự đoán chi tiêu (Predicting Spending):** Phân tích dữ liệu lịch sử để dự báo khả năng chi tiêu, hỗ trợ các chiến lược khuyến mãi phù hợp.","['• Customer Insights \n• Optimized Scheduling of Media Streams\n3Big Data Uses in Healthcare\n4Big Data Application in Education\n5Big Data Application in Retail & E-commerce\n• Predicting Spending\n• Personalizing Customer Experience\n• Forecasting Demand in Retail\n• Identifying Customers\n• Recommending Products\n• Analyzing Reviews\n6Big Data Application in Marketing\n7Big Data Application in Travel industry\n8Big Data Application in Telecom\n• Improve Customer Experience\n• Targeted Marketing', '• This can be done across industries\n• Healthcare, education, transportation, and moreKHOA THƯƠNG MẠI ĐIỆN TỬ\nTHE FACUTY OF ELECTRONIC COMMERCE\nBig Data in Healthcare\n• Data about heart \nrate, sleep \nquality, exercise \nand more\n• Gathered \ncontinuously and \navailable in real \ntime\n• Improves \ntracking of \nhealth patterns\nBig Data\nAvailability\nResult']"
+Python,Numpy là gì ?,"Là một thư viện bao gồm các đối tượng mảng
+đa chiều (multidimensional array) và một tập
+hợp các phương thức để xử lý mảng đa chiều
+đó.
+Sử dụng Numpy, các toán tử toán học và logic
+có thể được thực hiện.
+Thay thế cho List
+Cài đặt: pip install numpy","Chào bạn, mình là EduFlow AI. Dưới đây là thông tin về NumPy dựa trên tài liệu môn học:
+
+*   **Định nghĩa:** NumPy (Numerical Python) là một thư viện Python chuyên dụng, bao gồm các đối tượng mảng đa chiều (ndarray) và tập hợp các phương thức để xử lý chúng.
+*   **Vai trò:** Đây là công cụ thay thế cho List truyền thống, hỗ trợ thực hiện các toán tử toán học và logic trên dữ liệu với tốc độ cao.
+*   **Tầm quan trọng:** Theo tài liệu môn học, NumPy là thành phần thiết yếu trong Data Science và Data Analytics nhờ khả năng tính toán hiệu quả trên các bộ dữ liệu lớn.
+*   **Cài đặt:** Bạn có thể cài đặt thư viện này thông qua lệnh `pip install numpy`.","['LECTURE 2: NumPy\nPHÂN TÍCH DỮ LIỆU  \nBẰNG PYTHON\n2\nNội dung\n\uf076 Giới thiệu tổng quan (Python, Matlab,…)\n\uf076 Mảng một chiều\n\uf076 Mảng nhiều chiều\n\uf076 Một số tính toán quan trọng ở Numpy\n3\nGiới thiệu\n\uf071 NumPy (Numerical Python)\n\uf0a7 Là một thư viện bao gồm các đối tượng mảng\nđa chiều (multidimensional array) và một tập\nhợp các phương thức để xử lý mảng đa chiều\nđó.\n\uf0a7 Sử dụng Numpy, các toán tử toán học và logic\ncó thể được thực hiện.\n\uf0a7 Thay thế cho List\n\uf0a7 Cài đặt: pip install numpy\n4\nGiới thiệu\n5\nGiới thiệu\n6', '4\nGiới thiệu\n5\nGiới thiệu\n6\nGiới thiệu\n\uf071 Ưu điểm\n\uf0a7 Chứa bộ các giá trị\n\uf0a7 Có thể chứa các loại dữ liệu khác nhau\n\uf0a7 Có thể thay đổi, thêm, xóa\n\uf0a7 Đầy đủ chức năng tính toán\n\uf0a7 Rất nhiều thư viện được xây dựng sẵn trong \nNumpy\n\uf0a7 Cần cho Data Science/Data analytics\n- Thực hiện công việc tính toán trên các bộ dữ \nliệu (data set)\n- Tốc độ cao\n7\nGiới thiệu\n\uf071 NumPy - Ndarray Object\n\uf0a7 Đối tượng quan trọng nhất trong NumPy là\nkiểu mảng N-dimensional được gọi là\nndarray. Nó mô tả một bộ các item cùng kiểu.']"
+,Đối tượng quan trọng nhất trong numpy là ,"Đối tượng quan trọng nhất trong NumPy là
+kiểu mảng N-dimensional được gọi là
+ndarray. Nó mô tả một bộ các item cùng kiểu.
+Item trong mảng có thể truy xuất bằng cách sử
+dụng zero-based index.
+Mỗi item trong ndarray có cùng kích thước
+block trong bộ nhớ và là một đối tượng data-
+type gọi là dtype.","Theo tài liệu môn học, đối tượng quan trọng nhất trong NumPy là **ndarray** (viết tắt của N-dimensional array).
+
+Đặc điểm chính của ndarray bao gồm:
+*   Mô tả một tập hợp các phần tử có cùng kiểu dữ liệu.
+*   Mỗi phần tử có cùng kích thước khối trong bộ nhớ và được xác định bởi một đối tượng `dtype`.
+*   Truy xuất các phần tử thông qua chỉ số bắt đầu từ 0 (zero-based index).","['ndarray. Nó mô tả một bộ các item cùng kiểu.\nItem trong mảng có thể truy xuất bằng cách sử\ndụng zero-based index.\n\uf0a7 Mỗi item trong ndarray có cùng kích thước\nblock trong bộ nhớ và là một đối tượng data-\ntype gọi là dtype.\n8\nGiới thiệu\n\uf071 Ví dụ\n9\nMảng một chiều\n\uf071 Tạo mảng một chiều\n\uf0a7 Từ object có định dạng array: sử dụng\narray(object, dtype=None)\n10\nMảng một chiều\n\uf071 Tạo mảng một chiều\n\uf0a7 Từ object có định dạng array: sử dụng\narray(object, dtype=None)\n11', '4\nGiới thiệu\n5\nGiới thiệu\n6\nGiới thiệu\n\uf071 Ưu điểm\n\uf0a7 Chứa bộ các giá trị\n\uf0a7 Có thể chứa các loại dữ liệu khác nhau\n\uf0a7 Có thể thay đổi, thêm, xóa\n\uf0a7 Đầy đủ chức năng tính toán\n\uf0a7 Rất nhiều thư viện được xây dựng sẵn trong \nNumpy\n\uf0a7 Cần cho Data Science/Data analytics\n- Thực hiện công việc tính toán trên các bộ dữ \nliệu (data set)\n- Tốc độ cao\n7\nGiới thiệu\n\uf071 NumPy - Ndarray Object\n\uf0a7 Đối tượng quan trọng nhất trong NumPy là\nkiểu mảng N-dimensional được gọi là\nndarray. Nó mô tả một bộ các item cùng kiểu.']"
+,Thuật toán Apriori được triển khai như nào,"Trước tiên, tập các 1-itemset thường xuyên được tìm ra bằng
+cách quét qua cơ sở dữ liệu để tiến hành đếm tần suất xuất hiện
+của từng (tập) mục và chọn lấy những mục thỏa min_sup. Tập
+kết quả được gọi là 
+Tiếp theo được sử dụng để tìm là tập các 2-itemset thường
+xuyên. lại được sử dụng để tìm kiếm , và cứ tiếp tục như
+vậy cho đến khi không thể tìm thấy k-itemset thường xuyên nào
+cao hơn nữa. Cứ mỗi lần tìm kiếm mỗi đòi hỏi phải quét qua
+toàn bộ cơ sở dữ liệu một lần","Chào bạn, tôi là EduFlow AI. Dưới đây là cách triển khai thuật toán Apriori dựa trên tài liệu của bạn:
+
+*   **Tìm tập 1-itemset ($L_1$):** Quét toàn bộ cơ sở dữ liệu để đếm tần suất xuất hiện của từng mục, sau đó chọn các mục thỏa mãn ngưỡng hỗ trợ tối thiểu (`min_sup`).
+*   **Tìm các tập k-itemset tiếp theo ($L_k$):** Sử dụng tập $L_{k-1}$ để tạo ra các tập ứng viên $k$-itemset và lọc ra những tập thường xuyên.
+*   **Lặp lại quy trình:** Tiếp tục tìm $L_k$ từ $L_{k-1}$ cho đến khi không thể tìm thấy thêm tập phổ biến nào nữa.
+*   **Yêu cầu tài nguyên:** Theo tài liệu môn học, mỗi lần tìm kiếm tập $L_k$ đòi hỏi phải quét qua toàn bộ cơ sở dữ liệu một lần.","['6.1.1 Luậtk ếth ợp\n15\n\uf071 Thuậtt o á nA p r i o r i\n\uf0a7 Trước tiên, tập các 1-itemset thường xuyên được tìm ra bằng\ncách quét qua cơ sở dữ liệu để tiến hành đếm tần suất xuất hiện\ncủa từng (tập) mục và chọn lấy những mục thỏa min_sup.T ậ p\nkết quả được gọi là ଵ.\n\uf0a7 Tiếp theo ଵđược sử dụng để tìm ଶlà tập các 2-itemset thường\nxuyên. ଶlại được sử dụng để tìm kiếm ଷ,v àc ứt i ế pt ụ cn h ư\nvậy cho đến khi không thể tìm thấy k-itemset thường xuyên nào', 'cao hơn nữa. Cứ mỗil ần tìm ki ếmm ỗi \u0bde đòi hỏip hải quét qua\ntoàn bộ cơ sở dữ liệum ộtl ần.\n6.1.1 Luậtk ếth ợp\n16\n\uf071 Thuậtt o á nA p r i o r i\n\uf0a7 Giả sử thiết lập giá trị\nmin_sup_count =2\n\uf0a7 Tương ứng với min_sup =2 / 9=\n22%\n\uf0a7 Tập các 1-itemset ଵxác định bằng\ncách đếm tần suất xuất hiện trong\ndữ liệu giao dịch.\nDanh mụcTID\nI1, I2, I5T100\nI2, I4T200\nI2, I3T300\nI1, I2, I4T400\nI1, I3T500\nI2, I3T600\nI1, I3T700\nI1, I2, I3, I5T800\nI1, I2, I3T9006.1.1 Luậtk ếth ợp\n17\n\uf071 Thuậtt o á nA p r i o r i']"
+,stats.norm.ppf() hàm này làm gì,"Hàm `stats.norm.ppf()` trong thư viện `scipy.stats` là hàm ngược của hàm phân phối tích lũy (CDF):
+
+*   **Chức năng:** Trả về giá trị $x$ sao cho xác suất tích lũy từ $-\infty$ đến $x$ bằng với giá trị xác suất ($q$) được cung cấp.
+*   **Tham số:** Nhận vào một giá trị xác suất $q$ (từ 0 đến 1), cùng với các tham số định vị (loc) và tỷ lệ (scale) của phân phối chuẩn.
+*   **Ứng dụng:** Thường dùng để tìm **giá trị tới hạn (critical value)** trong kiểm định giả thuyết hoặc xác định khoảng tin cậy.
+*   **Ví dụ:** `stats.norm.ppf(0.975)` sẽ trả về xấp xỉ 1.96, đây là giá trị tới hạn cho kiểm định hai phía với mức ý nghĩa 5%.","Chào bạn, mình là EduFlow AI. Dưới đây là giải đáp cho câu hỏi của bạn:
+
+*   **Chức năng:** `stats.norm.ppf(q)` (Percent Point Function) là hàm ngược của hàm phân phối tích lũy (CDF). Nó trả về giá trị $x$ sao cho xác suất để biến ngẫu nhiên chuẩn có giá trị nhỏ hơn hoặc bằng $x$ đúng bằng $q$.
+*   **Ứng dụng:** Hàm này thường được dùng để tìm giá trị tới hạn (critical value) trong kiểm định giả thuyết hoặc xác định khoảng tin cậy. 
+*   **Ví dụ:** Với `stats.norm.ppf(0.975)`, kết quả trả về là khoảng 1.96, tương ứng với ngưỡng xác suất 95% trong phân phối chuẩn tắc (loại bỏ 2.5% ở mỗi đuôi).
+*   **Lưu ý:** Đây là công cụ quan trọng trong Python để xác định các vùng bác bỏ ($rejection \ regions$) khi thực hiện kiểm định giả thuyết thống kê.
+
+*Nguồn: Kiến thức chuẩn về thư viện SciPy (scipy.stats) trong Python.*","['13 Câu 1: Anh (Chị) Phân biệt sự khao nêac trinh để tiến hành báo cho dữ kiểu số thởi gian . số thời nhau giữa phương pháp số binh quân di và phương pháp hồi 0 gian. Câu 2: giải thích hàm stats.norm-Ppf(- ) ở python? Bạn giải thích thêm về lý iểm định liên quan dến hàm stats norm pPfO) qui chung dự Iiệu dãy dãy dộng qui Hãy thuy', 'Lecture 5: Tests of Hypothesis\nPHÂN TÍCH DỮ LIỆU  \nBẰNG PYTHON\n1\nContents\n5.1. Fundamentals of Hypothesis Testing: One-Sample Tests \n5.2 Two sample tests with numerical data\n5.3. Analysis of variance\n5.4. Post hoc analysis\n2\n5.1. Fundamentals of Hypothesis testing\n3\nĐịnh lý giớih ạn trung tâm (Central Limit Theorem – CLT)\n5.1. Fundamentals of Hypothesis testing\n4\nĐịnh lý giớih ạn trung tâm (Central Limit Theorem – CLT)5.1. Fundamentals of Hypothesis testing\n5\nNormalization: Z-score']"
+,ủa sao gọi là hàm ngược của hàm phân phối tích lũy,"
+*   **Định nghĩa hàm thuận (CDF):** Hàm phân phối tích lũy (Cumulative Distribution Function - `stats.norm.cdf`) nhận đầu vào là một **giá trị dữ liệu** và trả về **xác suất** (diện tích dưới đường cong từ $-\infty$ đến điểm đó).
+*   **Định nghĩa hàm ngược (PPF):** Hàm phần trăm điểm (Percent Point Function - `stats.norm.ppf`) làm ngược lại: nhận đầu vào là một **xác suất** (tỷ lệ phần trăm) và trả về **giá trị dữ liệu** tương ứng trên trục hoành.
+*   **Ví dụ minh họa:** Nếu CDF cho biết ""xác suất tại điểm 1.96 là 0.975"", thì PPF sẽ nhận 0.975 để ""trả ngược"" lại kết quả là 1.96.
+*   **Tên gọi khác:** Trong toán học, PPF còn được gọi là **hàm phân vị (quantile function)**, giúp xác định ngưỡng giá trị tại một vị trí phân vị nhất định (như tài liệu đã đề cập về Percentiles).","Chào bạn, mình là EduFlow AI. Dưới đây là giải đáp cho câu hỏi của bạn:
+
+*   **Bản chất:** Hàm phân phối tích lũy (CDF) nhận đầu vào là **giá trị dữ liệu** và trả về **xác suất** (diện tích dưới đường cong). Ngược lại, hàm `stats.norm.ppf` (Percent Point Function) nhận đầu vào là **xác suất** và trả về **giá trị dữ liệu** tương ứng.
+*   **Tại sao gọi là hàm ngược:** Vì nó thực hiện thao tác đảo ngược quy trình của CDF. Nếu CDF cho biết ""xác suất để $X < x$ là bao nhiêu"", thì hàm ngược (PPF) trả lời ""giá trị $x$ nào khiến xác suất $X < x$ đạt được mức cho trước"".
+*   **Liên hệ tài liệu:** Trong tài liệu của bạn, khái niệm này tương đồng với việc xác định các **Percentiles (Phân vị)**. Ví dụ: `stats.norm.ppf(0.25)` chính là tìm giá trị $Q_1$ (phân vị thứ 25), nơi mà 25% dữ liệu nhỏ hơn giá trị đó.
+*   **Ứng dụng:** Hàm này cực kỳ quan trọng trong kiểm định giả thuyết để tìm ""giá trị tới hạn"" (critical value) khi bạn đã biết mức ý nghĩa ($\alpha$) mong muốn.
+
+*Nguồn bổ sung: Theo tài liệu chuẩn của thư viện SciPy (scipy.stats), PPF là nghịch đảo của CDF (Inverse Cumulative Distribution Function).*","['13 Câu 1: Anh (Chị) Phân biệt sự khao nêac trinh để tiến hành báo cho dữ kiểu số thởi gian . số thời nhau giữa phương pháp số binh quân di và phương pháp hồi 0 gian. Câu 2: giải thích hàm stats.norm-Ppf(- ) ở python? Bạn giải thích thêm về lý iểm định liên quan dến hàm stats norm pPfO) qui chung dự Iiệu dãy dãy dộng qui Hãy thuy', '24\n\uf076 Measures of relative standing and box plots\n\uf0a7 Percentiles: The pth percentile of a set of measurements is\nthe value for which\n• at most, p% of the measurements are less than that\nvalue\n• at most, 100 (1 – p)% of all the measurements are\ngreater than that value.\nPUPL\n4.2. Thống kê mô tả về dữ liệu\n25\n\uf076 Measures of relative standing and box plots\n\uf0a7 Percentiles: Commonly used percentiles\n• First (lower) decile, p10 = 10th percentile\n• First (lower) quartile, Q1= 25th percentile']"
+AI,Sự khác nhau giữa ML và DL?,"Đó là ML phải trải qua quá trình feature extraction
+Rồi mới tới classification. Còn ở DL thì 2 quá trình hắn kết hợp lại với nhau.
+Ví dụ cụ thể hơn: Ở cái nhận diện hình ảnh con chó với con mèo. Ở DL Chỉ cần cung cấp cho hắn thật nhiều ảnh để hắn phân tích và nhận dạng. Còn ML thì mình phải nhập thuộc tính. Ví dụ mắt thì sao, lông thì sao, mũi sao càng nhiều thuộc tính độ chính xác càng cao.","Dựa trên tài liệu môn học, sự khác biệt giữa Machine Learning (ML) và Deep Learning (DL) như sau:
+
+*   **Quy trình xử lý:** ML yêu cầu tách biệt quá trình trích xuất đặc trưng (feature extraction) rồi mới đến phân loại (classification). Ngược lại, DL tích hợp hai quá trình này làm một.
+*   **Hiệu quả:** DL ưu việt hơn nhờ khả năng tự phân tích dữ liệu từ lượng lớn đầu vào mà không cần can thiệp thủ công nhiều như ML.
+*   **Tính ứng dụng:** DL giúp việc tính toán trở nên rẻ và khả thi hơn với dữ liệu phi cấu trúc, tiêu biểu là các ứng dụng nhận diện hình ảnh hoặc phân biệt hàng giả.
+*   **Cơ chế:** DL sử dụng mạng nơ-ron nhân tạo (Neural Networks) lấy cảm hứng từ cấu trúc nơ-ron sinh học của con người để xử lý thông tin.","['thì mô hình kinh doanh taxi truyền thống và xe ôm truyền thống dần dần bị loại bỏ và hạ tầng của nó yêu cầu của nó là mọi người cần phải có một chiếc smartphone. 4) Sự khác nhau giữa ML và DL? Trả lời:  Sự khác nhau của ML và DL: Đó là ML phải trải qua quá trình feature extraction Rồi mới tới classification. Còn ở DL thì 2 quá trình hắn kết hợp lại với nhau. Ví dụ cụ thể hơn: Ở cái nhận diện hình ảnh con chó với con mèo. Ở DL Chỉ cần cung cấp cho hắn thật nhiều ảnh để hắn phân tích và nhận', 'như ML mà thay vào đó tích hợp bước feature extraction với classification - DL ưu việt hơn: +  DL có thể cải thiện rất nhiều về hiệu quả + Việc tính toán trở nên rẻ hơn, khiến DL trở nên khả thi: chúng ta có thể dự đoán từ lượng lớn DL phi cấu trúc  - Ứng dụng: nhận diện hình ảnh, phân biệt tin giả, hàng giả từ hàng hiệu (detecting knockoffs from luxury products) + Mạng Nơ-ron nhân tạo: - Neural Networks (NNs) được lấy cảm hứng từ mạng nơ-ron tế bào sinh học của con người. Mỗi một nơ ron trong']"
+,GANs và VAEs ?,"GANs
+- Sử dụng để tạo ra nội dung nhân tạo, ngày càng khó phân biệt với nội dung thật.
+- Sử dụng hai mạng “ cạnh tranh” với nhau
++ Sử dụng mạng chung tạo ra một nội dung mới
++ Sử dụng một mạng khác, một mạng phân biệt, được sử dụng một cách đơn
+giản để phân biệt đầu ra của mạng đầu tiên là thật hay giả.
+VD:
+Phân biệt tiền thật giả: Training set: Cung cấp những dữ liệu về tiền thật, như hình dạng màu sắc, chất liệu, độ dài,... cho discriminator
++ random noise -> Generator ( phát hiện tiền giả) -> Discriminator -> tiền giả random noise -> Generator ( phát hiện tiền thật) -> Discriminator -> tiền thật
+VAEs
+- Sử dụng để tạo ra một nội dung mới mà chúng ta có thể kiểm soát được các thuộc
+tính của nó.
+VD: Input: là một bức ảnh tường đen và nhân vật có đeo kính -> encode -> decode -> bức ảnh mới tường trắng và nhân vật không đeo kính.","Chào bạn, đây là giải đáp về GANs và VAEs dựa trên tài liệu môn học:
+
+*   **GANs (Generative Adversarial Networks):**
+    *   Sử dụng cơ chế hai mạng đối nghịch: một mạng tạo nội dung (Generator) và một mạng phân biệt (Discriminator).
+    *   Mạng Generator cố gắng tạo ra nội dung mới, trong khi mạng Discriminator học cách phân biệt đâu là dữ liệu thật, đâu là dữ liệu giả do Generator tạo ra.
+    *   Mục tiêu là tạo ra nội dung nhân tạo ngày càng chân thực, khó phân biệt với dữ liệu thật (Ví dụ: kiểm định tiền thật/giả).
+
+*   **VAEs (Variational Autoencoders):**
+    *   Sử dụng để tạo ra nội dung mới mà người dùng có thể chủ động kiểm soát các thuộc tính cụ thể của đầu ra.
+    *   Khác với GANs tập trung vào sự cạnh tranh, VAEs tập trung vào việc mã hóa và giải mã để tái tạo hoặc biến đổi thuộc tính dữ liệu.
+    *   Ví dụ: Dùng một bức ảnh đầu vào để thay đổi các đặc trưng mong muốn thông qua việc điều khiển các thuộc tính đã được học.","['cho hắn thật nhiều ảnh để hắn phân tích và nhận dạng. Còn ML thì mình phải nhập thuộc tính. Ví dụ mắt thì sao, lông thì sao, mũi sao càng nhiều thuộc tính độ chính xác càng cao.   5) GANs và VAEs ? GANs - Sử dụng để tạo ra nội dung nhân tạo, ngày càng khó phân biệt với nội dung thật. - Sử dụng hai mạng “ cạnh tranh” với nhau + Sử dụng mạng chung tạo ra một nội dung mới + Sử dụng một mạng khác, một mạng phân biệt, được sử dụng một cách đơn giản để phân biệt đầu ra của mạng đầu tiên là thật hay', 'để phân biệt đầu ra của mạng đầu tiên là thật hay giả. VD: Phân biệt tiền thật giả: Training set:  Cung cấp những dữ liệu về tiền thật, như hình dạng màu sắc, chất liệu, độ dài,... cho  discriminator + random noise -> Generator ( phát hiện tiền giả) -> Discriminator -> tiền giả random noise -> Generator ( phát hiện tiền thật) -> Discriminator -> tiền thật  VAEs - Sử dụng để tạo ra một nội dung mới mà chúng ta có thể kiểm soát được các thuộc tính của nó. VD: Input: là một bức ảnh tường đen và']"
+,Ứng dụng AI trong y tế thì như nào,"Chẩn đoán bệnh thông qua ảnh X- Ray hay điện tâm đồ
++ Các máy chụp ảnh nhiệt ở sân bay để phân tích bệnh nhân nhiễm bệnh do vi
+trùng từ việc chụp cắt lớp vi phổi, giúp cung cấp dữ liệu và theo dõi sự lây lan
+của dịch bệnh CV 19","Chào bạn, mình là EduFlow AI. Dưới đây là các ứng dụng của AI trong y tế dựa trên tài liệu của bạn:
+
+*   **Chẩn đoán hình ảnh:** Hỗ trợ bác sĩ phân tích và chẩn đoán bệnh thông qua các kết quả từ ảnh chụp X-Ray.
+*   **Quản lý dịch vụ:** Cung cấp hệ thống thông tin tự động để điều phối dịch vụ vận chuyển cấp cứu và chuyển viện.
+*   **Hỗ trợ hành chính:** Hỗ trợ nhắc nhở thời gian biểu cho bệnh nhân và hỗ trợ y tá thực hiện các thao tác nghiệp vụ chuyên môn.
+
+*Nguồn: Dựa trên nội dung Câu 7 trong tài liệu học tập bạn đã cung cấp.*","['liệu\n \nđiện\n \ntử\n \n \nd.\n \nMô\n \nphỏng\n \ncách\n \nthức\n \ncon\n \nngười\n \nsuy\n \nnghĩ\n \nvà\n \nhọc\n \nhỏi\n \n \nĐáp\n \nán:\n \nd\n \n \nCâu  7  \nCông  dụng  của  AI  trong  ngành  y  tế  bao  gồm  cái  nào  sau  đây?  \n \na.\n \nChẩn\n \nđoán\n \nbệnh\n \nqua\n \nảnh\n \nchụp\n \nX-Ray\n \n \nb.\n \nCung\n \ncấp\n \ndịch\n \nvụ\n \nvận\n \nchuyển\n \ncấp\n \ncứu,\n \nchuyển\n \nviện\n \nqua\n \nhệ\n \nthông\n \nthông\n \ntin\n \ntự\n \nđộng\n \n \nc.\n \nThông\n \nbáo\n \nthời\n \ngian\n \nbiểu\n \ncho\n \nbệnh\n \nnhân\n \n \nd.\n \nHỗ\n \ntrợ\n \ny\n \ntá\n \ntrong\n \nthao\n \ntác\n \nnghiệp\n \nvụ', 'liệu\n \nđiện\n \ntử\n \n \nd.\n \nMô\n \nphỏng\n \ncách\n \nthức\n \ncon\n \nngười\n \nsuy\n \nnghĩ\n \nvà\n \nhọc\n \nhỏi\n \n \nĐáp\n \nán:\n \nd\n \n \nCâu  7  \nCông  dụng  của  AI  trong  ngành  y  tế  bao  gồm  cái  nào  sau  đây?  \n \na.\n \nChẩn\n \nđoán\n \nbệnh\n \nqua\n \nảnh\n \nchụp\n \nX-Ray\n \n \nb.\n \nCung\n \ncấp\n \ndịch\n \nvụ\n \nvận\n \nchuyển\n \ncấp\n \ncứu,\n \nchuyển\n \nviện\n \nqua\n \nhệ\n \nthông\n \nthông\n \ntin\n \ntự\n \nđộng\n \n \nc.\n \nThông\n \nbáo\n \nthời\n \ngian\n \nbiểu\n \ncho\n \nbệnh\n \nnhân\n \n \nd.\n \nHỗ\n \ntrợ\n \ny\n \ntá\n \ntrong\n \nthao\n \ntác\n \nnghiệp\n \nvụ']"
+,What About Unstructured Data?,"When data are not structured, features have to be “engineered” from the data
+• A time-consuming and challenging process, and often requires domain expertise
+• One of the most difficult parts of the ML process, where data scientists spend a lot of their time
+• Can be as much an art as a science","Dưới đây là thông tin về dữ liệu phi cấu trúc (Unstructured Data) dựa trên tài liệu môn học của bạn:
+
+*   **Định nghĩa:** Dữ liệu phi cấu trúc không thể lưu trữ trong các cơ sở dữ liệu dạng hàng và cột truyền thống và không tuân theo mô hình dữ liệu cố định.
+*   **Ví dụ điển hình:** Hình ảnh, video, tệp âm thanh, tệp văn bản, nội dung mạng xã hội, tệp PDF, bản ghi âm cuộc gọi hỗ trợ khách hàng và các khảo sát mở.
+*   **Thách thức xử lý:** Khi dữ liệu không có cấu trúc, các đặc trưng (features) phải được ""kỹ thuật hóa"" (engineered) thủ công. Đây là quá trình tốn thời gian, đòi hỏi kiến thức chuyên môn sâu và thường được coi là phần khó nhất trong quy trình học máy (Machine Learning).
+*   **Tính chất:** Việc xử lý dữ liệu này đòi hỏi sự kết hợp giữa kỹ thuật khoa học và kỹ năng sáng tạo (được ví như một môn nghệ thuật).","['•When data are not structured, features have to be “engineered” from the data•A time-consuming and challenging process, and often requires domain expertise•One of the most difficult parts of the ML process, where data scientists spend a lot of their time•Can be as much an art as a science\nWhat About Unstructured Data?KHOA THƯƠNG MẠI ĐIỆN TỬTHE FACUTY OF ELECTRONIC COMMERCE', 'hàng,... - DL phi cấu trúc: không thể chứa trong CSDL dạng hàng và cột, và nó cũng không có mô hình dữ liệu nào liên quan VD: hình ảnh, phim và các tệp âm thanh, các tệp chứa chữ cái, các nội dung từ mạng xã hội, hình ảnh từ vệ tinh, các bài thuyết trình, tệp PDF, các câu trả lời từ bản khảo sát câu hỏi mở, các trang web và bản thu từ các cuộc gọi hỗ trợ khách hàng. 3) ML có thể trở thành GPTs không? Trả lời:  Có. Nó giúp hầu hết các lĩnh vực công nghiệp có khả năng thay đổi. Nhưng trong quá']"
+,Test data ? what is it,"Test data (also called a “hold-out sample”) is a data set that is not used to train or build the model, but can be used to validate the model
+• Validating performance on a data set that’s not used to build the model (test data) helps ensure the model also works well on outside samples","Chào bạn, mình là EduFlow AI. Dưới đây là thông tin về **Test data** dựa trên tài liệu môn học của bạn:
+
+*   **Định nghĩa:** Test data (còn gọi là ""hold-out sample"") là tập dữ liệu không được sử dụng trong quá trình huấn luyện hoặc xây dựng mô hình.
+*   **Mục đích:** Dùng để kiểm chứng (validate) hiệu suất và khả năng hoạt động của mô hình trên các dữ liệu mới.
+*   **Vai trò:** Việc kiểm tra trên dữ liệu không dùng để huấn luyện giúp đảm bảo mô hình hoạt động ổn định và chính xác với các mẫu dữ liệu bên ngoài thực tế.","['Example: Customer targetingUniversity Of DanangUniversity Of EconomicsTHE FACUTY OF ELECTRONIC COMMERCE \nTest DataAI FundamentalsTran Van LocKHOA THƯƠNG MẠI ĐIỆN TỬTHE FACUTY OF ELECTRONIC COMMERCE\n•Test data (also called a “hold-out sample”) is a data set that is not used to train or build the model, but can be used to validate the model•Validating performance on a data set that’s not used to build the model (test data) helps ensure the model also works well on outside samples', 'Test DataKHOA THƯƠNG MẠI ĐIỆN TỬTHE FACUTY OF ELECTRONIC COMMERCE\nPerformance Tradeoffs with Training and Test Data\nKHOA THƯƠNG MẠI ĐIỆN TỬTHE FACUTY OF ELECTRONIC COMMERCE']"
+HTTTQL,Đặc điểm của các mức quản lý trong tổ chức,"Nội dung
+QL cấp thấp (mức tác nghiệp)
+QL cấp trung (mức chiến thuật)
+QL cấp cao (mức chiến lược)
+Mục tiêu
+Cải tiến hiệu quả hoạt động tác nghiệp
+Cải tiến hiệu quả của tổ chức
+Cải tiến chiến lược và kế hoạch dài hạn của tổ chức
+Công việc thực hiện
+- Theo dõi, kiểm tra hoạt động tác nghiệp
+- Tối ưu hóa hoạt động tác nghiệp
+- Theo dõi, kiểm tra hoạt động của tổ chức trong ngắn hạn
+- Ra quyết định cho quản lý mức tác nghiệp triển khai thực hiện
+- Ra quyết định chiến lược dài hạn, làm cơ sở cho quản lý mức chiến thuật triển khai thực hiện
+Con người
+Đốc công, trưởng nhóm, ...
+Trưởng phòng, ...
+Giám đốc, Hội đồng quản trị, ...","Chào bạn, EduFlow AI đây! Dựa trên tài liệu môn Hệ thống thông tin quản lý, dưới đây là đặc điểm của 3 mức quản lý trong tổ chức:
+
+*   **Mức tác nghiệp (Đốc công, trưởng nhóm):** Tập trung theo dõi, kiểm tra và tối ưu hóa các hoạt động tác nghiệp hàng ngày; ra quyết định phục vụ triển khai công việc cụ thể.
+*   **Mức chiến thuật (Trưởng phòng):** Chịu trách nhiệm theo dõi, kiểm tra hoạt động của tổ chức trong ngắn hạn và triển khai các kế hoạch từ cấp chiến lược.
+*   **Mức chiến lược (Giám đốc, Hội đồng quản trị):** Tập trung vào cải tiến chiến lược và lập kế hoạch dài hạn; đưa ra các quyết định mang tính định hướng làm cơ sở cho quản lý mức chiến thuật.
+
+*Nguồn: Theo tài liệu môn học ""Hệ thống thông tin trong kinh doanh toàn cầu"", chương 1.*","['hiệu quả của tổ chứcCải tiến chiến lược và kế hoạch dài hạn của tổ chứcCông việc thực hiện- Theo dõi, kiểm tra hoạt động tác nghiệp- Tối ưu hóa hoạt động tác nghiệp- Theo dõi, kiểm tra hoạt động của tổ chức trong ngắn hạn- Ra quyết định cho quản lý mức tác nghiệp triển khai thực hiện- Ra quyết định chiến lược dài hạn, làm cơ sở cho quản lý mức chiến thuật triển khai thực hiệnCon ngườiĐốc công, trưởng nhóm, ...Trưởng phòng, ... Giám đốc, Hội đồng quản trị, ...Đặc điểm của các mức quản lý trong', 'quản trị, ...Đặc điểm của các mức quản lý trong tổ chứcNguyễn Văn QuangChương 01:  HỆ THỐNG THÔNG TIN TRONGKINH DOANH TOÀN CẦU7']"
+,Quy trình kinh doanh (QTKD - Business processes) là gì ?,"QTKD là tập hợp các hoạt động / công việc (Routine) được tổ chức thực hiện theo thứ tự để đạt được mục tiêu đã đặt ra.
+• Hoạt động / công việc là các quy tắc, thủ tục, cách thức thực hiện chuẩn đã được xây dựng để xử lý các tình huống dự kiến. Công việc này thường lặp đi lặp lại.
+Ví dụ: Nhận đơn hàng; Lập hợp đồng; Lập hóa đơn; Xét duyệt đơn hàng; ...","Chào bạn, tôi là EduFlow AI. Dưới đây là giải đáp cho câu hỏi của bạn dựa trên tài liệu môn học:
+
+*   **Định nghĩa:** Theo tài liệu môn học, quy trình kinh doanh (QTKD) là tập hợp các hoạt động hoặc công việc được thực hiện bởi các chức danh (thủ kho, TP bán hàng...) hoặc các bộ phận cụ thể trong tổ chức.
+*   **Phạm vi:** Các thành phần tham gia quy trình có thể thuộc nội bộ doanh nghiệp hoặc bên ngoài (như khách hàng, ngân hàng).
+*   **Đặc điểm:** Một tổ chức thường bao gồm nhiều quy trình kinh doanh khác nhau để vận hành hoạt động.
+*   **Ví dụ thực tế:** Các quy trình bao gồm quản trị nhân sự (tuyển dụng, sa thải), mua bán hàng hóa (nhập hàng, bán hàng) và thanh toán (chi tiền mặt, thanh toán cho nhà cung cấp).","['duyệt\nđơn\nhàng\n;\n…\nQuy\ntrình\nkinh\ndoanh\n(QTKD \n-\nBusiness processes) \nlà\ngì\n?2\nNguyễn Văn Quang\nChương\n02\n:  \nKINH DOANH ĐIỆN TỬ & \nHỢP TÁC TOÀN CẦU\n•\nMỗi\nhoạt\nđộng\n/\ncông\nviệc\nđược\nthực\nhiện\nbởi\nmột\nchức\ndanh\ncông\nviệc\n(VD\n:\nthủ\nkho,\nTP\nbán\nhàng,\n…\n)\nhoặc\nmột\nbộ\nphận\nnào\nđó\n(VD\n:\nPhòng\nBán\nhàng,\nphòng\nKế\ntoán)\n.\n•\nChức\ndanh\ncông\nviệc\nhoặc\nbộ\nphận\ncó\nthể\nthuộc\nhoặc\nkhông\nthuộc\nđơn\nvị\n(ví\ndụ\n:\nkhách\nhàng,\ngiao\ndịch\nviên\nngân\nhàng,\n...\n)\n•\nMột\ntổ\nchức\ncó\nnhiều\nquy\ntrình\nkinh\ndoanh\nQuy\ntrình\nkinh', 'chức\ncó\nnhiều\nquy\ntrình\nkinh\ndoanh\nQuy\ntrình\nkinh\ndoanh\n(QTKD \n-\nBusiness processes) \nlà\ngì\n?\nNguyễn Văn Quang\nChương\n02:  \nKINH DOANH ĐIỆN TỬ & \nHỢP TÁC TOÀN CẦU\nVí\ndụ\nvề\nquy\ntrình\nkinh\ndoanh\ntrong\ndoanh\nnghiệp\n•\nQuy\ntrình\nvề\nnhân\nsự\n:\n“Tuyển\ndụng”,\n“Nâng\nlương”,\n“Luân\nchuyển”,\n“Kỷ\nluật”,\n“Sa\nthải”,\n…\n•\nQuy\ntrình\nvề\nmua\n/\nbán\n:\n“Mua\nhàng”,\n“Nhập\nhàng\nmua”,\n“Bán\nhàng”,\n“Nhập\nhàng\ntrả\nlại”,\n“Xuất\nkhuyến\nmãi”,\n...\n•\nQuy\ntrình\nthanh\ntoán\n:\n“Chi\ntiền\nmặt\ntạm\nứng”,\n“Thanh\ntoán\ncho\nnhà\ncung\nứng\nbằng']"
+,7 thành phần chính của hạ tầng CNTT :,"1. Phần cứng
+2. Hệ điều hành
+3. Phần mềm ứng dụng
+4. Phần mềm quản lý dữ liệu
+& thiết bị lưu trữ dữ liệu
+5. Truyền thông & mạng 6. Internet
+7. Hệ thống tích hợp dịch vụ","Dựa trên tài liệu môn học và kiến thức chuyên ngành về hạ tầng CNTT, 7 thành phần chính bao gồm:
+
+*   **Phần cứng máy tính:** Bao gồm máy chủ, máy tính cá nhân, thiết bị ngoại vi (màn hình, máy in, chuột) và các thiết bị mạng.
+*   **Phần mềm:** Gồm hệ điều hành, hệ quản trị cơ sở dữ liệu và các phần mềm ứng dụng chuyên biệt.
+*   **Con người:** Đội ngũ chuyên môn như nhà phân tích hệ thống, lập trình viên, lãnh đạo dự án, các cấp quản lý dữ liệu/an ninh (CIO, CSO, CDO) và người sử dụng cuối.
+*   **Dữ liệu:** Các tập hợp thông tin được lưu trữ, quản lý và xử lý trong hệ quản trị cơ sở dữ liệu để phục vụ hoạt động doanh nghiệp.
+*   **Mạng và viễn thông:** Hệ thống kết nối các thiết bị, nền tảng internet và công nghệ truyền dẫn giúp hệ thống hoạt động trên môi trường web.
+*   **Quy trình nghiệp vụ:** Các quy định, cách thức thực hiện chức năng hệ thống đã được xác định trong giai đoạn thiết kế để vận hành doanh nghiệp.
+*   **Cơ sở vật chất và quản trị:** Bao gồm môi trường làm việc, hạ tầng vật lý và chiến lược quản trị nguồn lực được doanh nghiệp dành cho việc xây dựng hệ thống mới.
+
+*(Nguồn: Tổng hợp từ tài liệu ""Chương 01 & 07 - Hệ thống thông tin"" của giảng viên Nguyễn Văn Quang và khung tham chiếu hạ tầng CNTT tiêu chuẩn).*","['=>\nHTTT\nmới\nđược\nthực\nhiện\ntrên\nnền\nweb,\ninternet\nChương\n07: XÂY DỰNG & QUẢN TRỊ HỆ THỐNG THÔNG TIN\nPhát\ntriển\nHTTT \nkhi\náp\ndụng\nCNTT\nNguyễn Văn Quang\n-\nHệ\nthống\nmới\ncần\ncó\ncác\nchức\nnăng\nnào\n(\ncách\nthực\nhiện\ntừng\nchức\nnăng\nđược\ntrình\nbày\nở\ngiai\nđoạn\nThiết\nkế\n)\n-\nThực\ntrạng\n(con\nngười,\ncơ\ncấu\ntổ\nchức,\n…\n)\ncủa\nDN\n&\nnguồn\nlực\nDN\ndành\ncho\nxây\ndựng\nHTTT\nmới\n.\n-\nNghiên\ncứu\ntính\nkhả\nthi\n:\nnguồn\nlực\ntiêu\nhao\nđể\nxây\ndựng\nHTTT\nmới\n=>\ntrả\nlời\ncâu\nhỏi\n“\nXây\ndựng\nHTTT\nmới\ncó\nkhả\nthi\nkhông\n?\n”\n-\nDự\nbáo\n&', 'Nguyễn Văn Quang1. Con người: nhà phân tích hệ thống, lập trình viên, lãnhđạo dự án, chuyên gia cơ sở dữ liệu, giám đốc thôngtin (CIO), giám đốc an ninh (CSO), giám đốc dữ liệu(CDO), người sử dụng, ...2. Phần cứng: máy tính (máy chủ, máy con), máy in,màn hình, chuột máy tính, các thiết bị mạng, ...3. Phần mềm: hệ điều hành, hệ quản trị cơ sở dữ liệu,phần mềm ứng dụng, ...Nguyễn Văn QuangCác thành phần của hệ thống thông tin dựa trên công nghệ thông tinChương 01:  HỆ THỐNG THÔNG TIN TRONGKINH']"
+,Hiệu ứng “chiếc roi da” - Bullwhip là gì,Thông tin về nhu cầu sản phẩm bị phóng đại dần khi nó đi từ người tiêu dùng đến nhà cung ứng,"Theo tài liệu môn học, hiệu ứng “chiếc roi da” (Bullwhip effect) được định nghĩa như sau:
+
+*   Đây là hiện tượng thông tin về nhu cầu sản phẩm bị phóng đại dần lên khi truyền từ người tiêu dùng cuối cùng ngược trở lại phía nhà cung ứng.
+*   Sự biến động này khiến các mắt xích trong chuỗi cung ứng phản ứng sai lệch, dẫn đến tồn kho dư thừa hoặc thiếu hụt không cần thiết.
+*   Hiệu ứng này gây khó khăn cho việc lập kế hoạch sản xuất và quản lý chuỗi cung ứng hiệu quả.","['trung\nbình\nmỗi\nnăm\nP\nChi \nphí\nmỗi\nlần\nđặt\nhàng\nS\nChi \nphí\nbảo\nquản\nmột\nđơn\nvị\nhàng\nHệ\nthống\nquản\nlý\nchuỗi\ncung\nứng\n-\nminh \nhọa\nChương\n04: CÁC HTTT ỨNG DỤNG\nTRONG DOANH NGHIỆP4\nNguyễn Văn Quang\nHệ thống quản lý chuỗi cung ứng\nHiệu\nứng\n“chiếc\nroi\nda”\n-\nBullwhip\n:\nThông\ntin\nvề\nnhu\ncầu\nsản\nphẩm\nbị\nphóng\nđại\ndần\nkhi\nnó\nđi\ntừ\nngười\ntiêu\ndùng\nđến\nnhà\ncung\nứng\nChương\n04: CÁC HTTT ỨNG DỤNG\nTRONG DOANH NGHIỆP\nNguyễn Văn Quang\nCác chức năng của Phần mềm quản lý chuỗi cung ứng\nBao\ngồm\n2\nnhóm\nhệ\nthống\nsau\n:', ';\nThành\nphẩm\nchuyển\nbán\nNGAY\nKHI\nđược\nsản\nxuất\nxong\n.\no\nChiến\nlược\nTồn\nkho\nan\ntoàn\n(\nS\nafety\nS\ntock\n-\nSS\n)\n:\ndự\nphòng\ntồn\nkho\ncho\nsự\nthiếu\nlinh\nhoạt\ntrong\nchuỗi\ncung\nứng\n.\n=>\nChi\nphí\ndự\ntrữ\ncao\nhơn\n“\nJust\nin\ntime\n”\n.\nÁp\ndụng\n“\nJust\nin\ntime\n”\nkhó\nkhăn\nhơn\n.\nVí\ndụ\n:\nPhương\npháp\nEOQ,\nphương\npháp\nMRP\nChương\n04: CÁC HTTT ỨNG DỤNG\nTRONG DOANH NGHIỆP\nNguyễn Văn Quang\nVí\ndụ\n:\nPhương\npháp\nEOQ\n(\nE\nconomic\nO\nrder\nQ\nuantity)\nS\nxAxP\nEOQ\n2\n\uf03d\nA\nSố\nlượng\nhàng\ncần\ntrung\nbình\nmỗi\nnăm\nP\nChi \nphí\nmỗi\nlần\nđặt\nhàng']"
+,ETL là gì,"ETL (Extract - Transform - Load): là quá trình trích xuất dữ liệu từ hệ thống nguồn, chuyển đổi để phù hợp với cấu trúc kho dữ liệu rồi nạp vào cơ sở dữ liệu của kho dữ liệu (DW). ETL được thực hiện tự động (đặt lịch thực hiện) hoặc thủ công.
+Extract (Data Acquisition): truy cập hệ thống nguồn để trích xuất dữ liệu. Dữ liệu được sinh ra từ quá trình này gọi là dữ liệu nguồn (Source Data).
+Transform (Data Integration): kiểm tra, làm sạch, điều chỉnh phù hợp các yêu cầu của DW. Dữ liệu được tạo ra bởi quá trình này gọi là dữ liệu tải (Load Data).
+Load (Data Integration): cập nhật dữ liệu tải (Load Data) vào DW.","Chào bạn, EduFlow AI đây! Dưới đây là giải đáp về ETL dựa trên tài liệu của bạn:
+
+*   **Định nghĩa:** ETL là quá trình trích xuất (Extract) dữ liệu từ các hệ thống nguồn, chuyển đổi (Transform) cho phù hợp với cấu trúc kho dữ liệu (DW), và cuối cùng là nạp (Load) vào kho dữ liệu đó.
+*   **Cơ chế hoạt động:** Đây là các luồng dữ liệu đi từ ""nguồn"" đến ""đích"", có thể được thực hiện tự động theo lịch hoặc thủ công.
+*   **Vai trò của Transform:** Theo tài liệu môn học, quá trình này bao gồm việc kiểm tra, làm sạch và áp dụng các biến đổi (như tính toán, nối chuỗi) để đảm bảo dữ liệu tương thích với yêu cầu của DW trước khi lưu trữ.
+*   **Lưu ý:** Quá trình ""Transform"" bắt buộc phải hoàn tất trước khi dữ liệu được ""Load"". Khi khối lượng dữ liệu tăng lên, thời gian xử lý chuyển đổi cũng sẽ kéo dài tương ứng.","['-\nL\noad\n)\n:\nlà\nquá\ntrình\ntrích\nxuất\ndữ\nliệu\ntừ\nhệ\nthống\nnguồn\n,\nchuyển\nđổi\nđể\nphù\nhợp\nvới\ncấu\ntrúc\nkho\ndữ\nliệu\nrồi\nnạp\nvào\ncơ\nsở\ndữ\nliệu\ncủa\nkho\ndữ\nliệu\n(DW)\n.\nETL\nđược\nthực\nhiện\ntự\nđộng\n(\nđặt\nlịch\nthực\nhiện\n)\nhoặc\nthủ\ncông\n.\nE\nxtract\n(Data\nAcquisition)\n:\ntruy\ncập\nhệ\nthống\nnguồn\nđể\ntrích\nxuất\ndữ\nliệu\n.\nDữ\nliệu\nđược\nsinh\nra\ntừ\nquá\ntrình\nnày\ngọi\nlà\ndữ\nliệu\nnguồn\n(Source\nData)\n.\nT\nransform\n(Data\nIntegration)\n:\nkiểm\ntra,\nlàm\nsạch,\nđiều\nchỉnh\nphù\nhợp\ncác\nyêu\ncầu\ncủa\nDW\n.\nDữ\nliệu\nđược\ntạo\nra\nb\nởi\nquá', 'thống nguồn RDBMS khác nhau sau đó chuyển đổi dữ liệu như áp dụng các \nbiến đổi dữ liệu ( tính toán, nối chuỗi v.v. ) và sau đó tải dữ liệu vào hệ \nthống Data Warehouse. ETL là những luồng từ “nguồn” tới “đích”. \nTrong quá trình ETL, engine chuyển đổi sẽ xử lý mọi thay đổi dữ liệu. Quá \ntrình ETL bắt buộc cần quá trình “Transform” hoàn tất trước ki dữ liệu được\nlưu (Load) vào kho. Khi kích thước dữ liệu tăng lên, thời gian chuyển đổi \ncũng tăng theo.']"
+Thị trường và định chế tai chính,"Giá trị hiện tại là gì, cho ví dụ","Giá trị hiện tại là khái niệm cơ bản trong tài chính. Khái niệm giá trị hiện tại cho rằng, một đồng dollar ở hiện tại có giá trị cao hơn một đồng dollar ở thời điểm tương lai. 
+Một khoản tiết kiệm gửi vào ngân hàng hôm nay, sau một thời gian sẽ tạo nên số tiền tích lũy cao hơn số vốn ban đầu.
+Giá trị hiện tại có thể sử dụng để đo lường giá trị hiện tại của một khoản tiền  hoặc của dòng tiền trong tương lai. Ví dụ, giả sử nhà đầu tư (NĐT) cho vay $100, thời hạn 1 năm, và mong muốn nhận thêm khoản lãi vay $10 từ hoạt động cho vay.
+
+Vốn gốc: số tiền cho vay ban đầu ($100)
+Ngày đến hạn: là ngày khoản vay được hoàn trả.
+Kỳ hạn cho vay: được tính từ khi bắt đầu nhận vốn đến ngày đến hạn (1 năm)
+Lãi vay: khoản tiền người đi vay phải trả cho người cho vay để sử dụng khoản vốn đầu tư. ($10)
+Lãi suất: Tỉ số giữa tiền lãi và vốn đầu tư ban đầu (10%)
+Công thức tính giá trị hiện tại:
+𝑃𝑉=𝐶𝐹/〖(1+𝑖)〗^𝑛 
+
+PV	: Giá trị hiện tại
+CF	: Dòng tiền tương lai
+i	: Lãi suất
+n	: Kỳ hạn (số thời kỳ)
+","Chào bạn, mình là EduFlow AI. Dưới đây là giải đáp về giá trị hiện tại (Present Value - PV):
+
+*   **Định nghĩa:** Giá trị hiện tại là giá trị của một khoản tiền hoặc dòng tiền trong tương lai được quy đổi về thời điểm hiện tại, dựa trên một mức lãi suất chiết khấu nhất định. Nó phản ánh nguyên tắc ""giá trị thời gian của tiền"" – một đồng tiền hôm nay có giá trị cao hơn một đồng tiền trong tương lai.
+*   **Công thức cơ bản:** PV = FV / (1 + r)^n
+    *(Trong đó: FV là giá trị tương lai, r là lãi suất chiết khấu, n là số kỳ).*
+*   **Ví dụ:** Nếu bạn được hứa trả 1.100.000 VNĐ sau 1 năm và lãi suất ngân hàng là 10%/năm, thì giá trị hiện tại của khoản tiền đó là: 1.100.000 / (1 + 0,1)^1 = 1.000.000 VNĐ.
+*   **Ứng dụng:** Trong tài chính và quản trị, khái niệm này giúp nhà quản lý ra quyết định đầu tư hoặc lập kế hoạch tài chính bằng cách so sánh lợi ích tương lai với chi phí bỏ ra ngay bây giờ.
+
+*(Nguồn: Kiến thức tài chính nền tảng - Nguyên lý quản trị tài chính).*","['Nguyễn Văn QuangHãy cho ví dụ về giá trị của thông tin:+ Thực hiện công việc, ghi nhận giao dịch+ Lập kế hoạch+ Hỗ trợ nhà quản lý ra quyết định+ Kiểm soát quá trình thực hiện+ Đo lường, đánh giá kết quả thực hiệnGiá trị của thông tinNguyễn Văn QuangChương 01:  HỆ THỐNG THÔNG TIN TRONGKINH DOANH TOÀN CẦUNguyễn Văn Quang1. Chính xác2. Đầy đủ3. Phù hợp4. Kịp thời5. Đơn giản6. Dễ khai thác, chia sẻ được7. Kiểm tra được8. Bảo mật, an toànĐặc điểm của thông tin có giá trịNguyễn Văn QuangChương 01:', '$125 x Q + $50.000 = $175 x Q => Q = 1.000\n26\n27\n1.1 Introduction of Business Analytics\n\uf076 Tình huống 2:\n27 28\n1.1 Introduction of Business Analytics\n28\n\uf076 Tình huống 3:29\n1.1 Introduction of Business Analytics\n29\nThere are some popular fuzzy numbers to express buyers’\nbehaviors through fuzzy membership in business environments\n\uf076 Tình huống 3:\n30\n1.2  Case study of Business Analytics\n30\n31\n1.2 Case study of Business Analytics\n31\n1.3 Business analytics success - organization\n32']"
+,Thị trường tập trung và thị trường OTC khác nhau gì,"Thị trường tập trung là thị trường mà việc giao dịch chứng
+khoán được tổ chức tập trung tại một nơi nhất định.
+Thị trường OTC là thị trường mà việc giao dịch chứng
+khoán không được thực hiện tại một địa điểm giao dịch cố
+định, mà dựa vào một hệ thống vận hành theo cơ chế thương
+lượng thông qua sự trợ giúp của hệ thống máy tính được kết
+nối giữa các thành viên tham gia thị trường.","Theo tài liệu môn học, sự khác biệt giữa hai loại thị trường này nằm ở địa điểm và cơ chế giao dịch:
+
+*   **Thị trường tập trung:** Việc giao dịch chứng khoán được tổ chức tại một địa điểm cố định và tập trung.
+*   **Thị trường OTC:** Giao dịch không diễn ra tại một địa điểm cố định, mà dựa trên một hệ thống vận hành theo cơ chế thương lượng.","['chứng khoán.\no Xác định giá của các chứng khoán mà công ty phát hành ra\ncông chúng trên thị trường sơ cấp. 151.2.2. Phân loại thị trường tài chính\n■ Thị trường tập trung và thị trường OTC:\n■ Thị trường tập trung là thị trường mà việc giao dịch chứng\nkhoán được tổ chức tập trung tại một nơi nhất định.\n■ Thị trường OTC là thị trường mà việc giao dịch chứng\nkhoán không được thực hiện tại một địa điểm giao dịch cố\nđịnh, mà dựa vào một hệ thống vận hành theo cơ chế thương', 'cho phép vốn dịch chuyển từ những người không có cơ hội đầu tư\nsinh lời đến những người có cơ hội đầu tư tốt hơn. \n■ Nhờ có thị trường tài chính, vốn được phân bổ một cách hiệu quả,\nqua đó góp phần nâng cao năng suất và hiệu quả của nền kinh tế\nnói chung.\n121.2.2. Phân loại thị trường tài chính\n■ Thị trường công cụ nợ và thị trường vốn cổ phần\n■ Thị trường sơ cấp và thị trường thứ cấp\n■ Thị trường tập trung và thị trường OTC\n■ Thị trường tiền tệ và thị trường vốn']"
+,T-bills viết tắt của gì ,"T-bills là viết tắt của Tín phiếu kho bạc (TPKB) là công cụ vay nợ ngắn hạn của Chính phủ do Kho bạc phát hành để bù đắp cho những thiếu hụt tạm thời của ngân sách nhà nước.
+TPKB là công cụ phổ biến được NHTW sử dụng trong nghiệp vụ thị trường mở.
+TPKB được xem là loại chứng khoán không có rủi ro vỡ nợ và có tính thanh khoản cao nhất.
+TPKB thuộc loại chứng khoán chiết khấu.
+TPKB thường được phát hành theo từng lô bằng phương pháp đấu giá trên thị trường sơ cấp. 
+","Trong tài liệu bạn cung cấp không đề cập đến khái niệm này. Dưới đây là giải đáp dựa trên kiến thức tài chính:
+
+*   **T-bills** là viết tắt của **Treasury bills** (Tín phiếu kho bạc).
+*   Đây là loại chứng khoán nợ ngắn hạn (thường dưới 1 năm) do Chính phủ phát hành để bù đắp thâm hụt ngân sách.
+*   T-bills thường được coi là tài sản không có rủi ro và được giao dịch ở mức chiết khấu so với mệnh giá.
+
+*(Nguồn tham khảo: Investopedia - Financial Terms Dictionary)*","['thương mại của các Doanh nghiệp sản xuất - kinh doanh dưới 2 hình thức:\nMua lại/chiết khấu các khoản phải thu hoặc Cho vay trên cơ sở thế chấp các\nkhoản phải thu. 21\n7.3. CÁC ĐỊNH CHẾ ĐẦU TƯ\n7.3.1. CÔNG TY TÀI CHÍNH❑ Quỹ đầu tư là quỹ hình thành từ vốn góp của nhà đầu tư với mục\nđích kiếm lợi nhuận từ việc đầu tư vào chứng khoán hoặc các dạng\ntài sản đầu tư khác, kể cả bất động sản, trong đó nhà đầu tư không\ncó quyền kiểm soát hàng ngày đối với việc ra quyết định đầu tư\ncủa quỹ.', 'vụ thanh toán.\n18\n7.3. CÁC ĐỊNH CHẾ ĐẦU TƯ\n7.3.1. CÔNG TY TÀI CHÍNH❑ Nguồn vốn:\n▪ Khoản vay từ ngân hàng\n▪ Phát hành chứng khoán nợ: thương phiếu, trái phiếu\n▪ Tiền gửi có kỳ hạn\n▪ Vốn chủ sở hữu: phát hành cổ phiếu và lợi nhuận giữ lại\n❑ Sử dụng vốn: thực hiện nghiệp vụ cấp tín dụng có tính\nchuyên biệt tùy theo từng loại công ty (Cho vay tiêu dùng, cho\nvay kinh doanh, cho thuê tài chính,...)\n19\n7.3. CÁC ĐỊNH CHẾ ĐẦU TƯ\n7.3.1. CÔNG TY TÀI CHÍNH❑ Phân loại theo phương diện tổ chức:']"
+,"Nếu nhà đầu tư yêu cầu 7% lợi tức hàng năm trên tín phiếu kỳ hạn 1 năm với mệnh giá $10.000, giá trị của tín phiếu là bao nhiêu?","P = $10.000 / (1 + 0,07) = $9.345,79
+
+Giữ các yếu tố khác không đổi, khi tỷ lệ lợi tức yêu cầu càng cao thì giá trị của tín phiếu càng giảm.","Chào bạn, EduFlow AI đây. Dựa trên kiến thức về định giá tài chính, đây là câu trả lời cho bạn:
+
+*   **Công thức tính:** Giá trị hiện tại của tín phiếu được tính bằng công thức: $P = \frac{F}{1 + r}$
+    *   Trong đó: $F$ (mệnh giá) = $10.000, $r$ (lợi tức) = 7% (0,07).
+*   **Kết quả:** $P = \frac{10.000}{1 + 0,07} = \frac{10.000}{1,07} \approx 9.345,79$.
+*   **Kết luận:** Giá trị của tín phiếu tại thời điểm hiện tại là khoảng **$9.345,79**.
+
+*Lưu ý: Dù tài liệu môn học có đề cập tín phiếu là công cụ đầu tư của công ty bảo hiểm, công thức định giá trên dựa trên kiến thức tài chính căn bản (nguồn: Investopedia).*","['▪ Phí bảo hiểm\n▪ Thu nhập từ hoạt động đầu tư\n11\n7.2. CÁC ĐỊNH CHẾ TIẾT KIỆM THEO HỢP ĐỒNG\n7.2.2. CÔNG TY BẢO HIỂM TÀI SẢN & TAI NẠN❑ Sử dụng vốn: do đặc điểm về tài chính nói trên, chiến\nlược đầu tư của các công ty này ưu tiên vào đầu tư ngắn\nhạn và an toàn như:\n▪ Tín phiếu kho bạc\n▪ Trái phiếu kho bạc\n▪ Trái phiếu chính quyền địa phương\n▪ Trái phiếu của các công ty có độ an toàn cao\n12\n7.2. CÁC ĐỊNH CHẾ TIẾT KIỆM THEO HỢP ĐỒNG', 'vụ thanh toán.\n18\n7.3. CÁC ĐỊNH CHẾ ĐẦU TƯ\n7.3.1. CÔNG TY TÀI CHÍNH❑ Nguồn vốn:\n▪ Khoản vay từ ngân hàng\n▪ Phát hành chứng khoán nợ: thương phiếu, trái phiếu\n▪ Tiền gửi có kỳ hạn\n▪ Vốn chủ sở hữu: phát hành cổ phiếu và lợi nhuận giữ lại\n❑ Sử dụng vốn: thực hiện nghiệp vụ cấp tín dụng có tính\nchuyên biệt tùy theo từng loại công ty (Cho vay tiêu dùng, cho\nvay kinh doanh, cho thuê tài chính,...)\n19\n7.3. CÁC ĐỊNH CHẾ ĐẦU TƯ\n7.3.1. CÔNG TY TÀI CHÍNH❑ Phân loại theo phương diện tổ chức:']"
+,Trái phiếu coupon tính như thế nào?,"Trái phiếu coupon: là loại trái phiếu mà tổ chức phát hành phải trả coupon/ tiền lãi định kỳ trong suốt thời hạn của trái phiếu và hoàn trả mệnh giá vào ngày đáo hạn của trái phiếu.
+𝑃𝑉=𝐶/(1+𝑖_𝑌𝑀 )^1 +𝐶/(1+𝑖_𝑌𝑀 )^2 +𝐶/(1+𝑖_𝑌𝑀 )^3 +…+𝐶/(1+𝑖_𝑌𝑀 )^𝑛 +𝐹/(1+𝑖_𝑌𝑀 )^𝑛 
+
+PV = Giá trái phiếu ở thời điểm hiện tại
+C = Số tiền coupon
+F = Mệnh giá trái phiếu
+n = kỳ hạn trái phiếu (số thời kỳ)","Dựa trên tài liệu bạn cung cấp, không có nội dung hướng dẫn cách tính toán cụ thể cho trái phiếu coupon. Dưới đây là kiến thức tài chính cơ bản để bạn tham khảo:
+
+*   **Công thức định giá:** Giá trái phiếu coupon ($P$) được tính bằng tổng hiện giá của các khoản thanh toán lãi định kỳ ($C$) và mệnh giá ($F$) nhận được khi đáo hạn.
+*   **Công thức:** $P = \sum_{t=1}^{n} \frac{C}{(1+r)^t} + \frac{F}{(1+r)^n}$
+    *   $C$: Tiền lãi coupon mỗi kỳ.
+    *   $r$: Lãi suất chiết khấu (lãi suất thị trường).
+    *   $n$: Số kỳ hạn còn lại.
+    *   $F$: Mệnh giá trái phiếu.
+*   **Nguồn tham khảo:** Kiến thức tài chính doanh nghiệp cơ bản (theo giáo trình *Principles of Corporate Finance* của Brealey, Myers & Allen).","['▪ Phí bảo hiểm\n▪ Thu nhập từ hoạt động đầu tư\n11\n7.2. CÁC ĐỊNH CHẾ TIẾT KIỆM THEO HỢP ĐỒNG\n7.2.2. CÔNG TY BẢO HIỂM TÀI SẢN & TAI NẠN❑ Sử dụng vốn: do đặc điểm về tài chính nói trên, chiến\nlược đầu tư của các công ty này ưu tiên vào đầu tư ngắn\nhạn và an toàn như:\n▪ Tín phiếu kho bạc\n▪ Trái phiếu kho bạc\n▪ Trái phiếu chính quyền địa phương\n▪ Trái phiếu của các công ty có độ an toàn cao\n12\n7.2. CÁC ĐỊNH CHẾ TIẾT KIỆM THEO HỢP ĐỒNG', 'vụ thanh toán.\n18\n7.3. CÁC ĐỊNH CHẾ ĐẦU TƯ\n7.3.1. CÔNG TY TÀI CHÍNH❑ Nguồn vốn:\n▪ Khoản vay từ ngân hàng\n▪ Phát hành chứng khoán nợ: thương phiếu, trái phiếu\n▪ Tiền gửi có kỳ hạn\n▪ Vốn chủ sở hữu: phát hành cổ phiếu và lợi nhuận giữ lại\n❑ Sử dụng vốn: thực hiện nghiệp vụ cấp tín dụng có tính\nchuyên biệt tùy theo từng loại công ty (Cho vay tiêu dùng, cho\nvay kinh doanh, cho thuê tài chính,...)\n19\n7.3. CÁC ĐỊNH CHẾ ĐẦU TƯ\n7.3.1. CÔNG TY TÀI CHÍNH❑ Phân loại theo phương diện tổ chức:']"

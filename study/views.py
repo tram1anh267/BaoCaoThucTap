@@ -15,6 +15,7 @@ import shutil
 import json
 from django.utils import timezone
 
+@csrf_exempt
 def register_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
@@ -30,6 +31,7 @@ def register_view(request):
     return render(request, 'study/register.html', {'form': form})
 
 
+@csrf_exempt
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')

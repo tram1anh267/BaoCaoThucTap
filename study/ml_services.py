@@ -1,4 +1,3 @@
-
 import json
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -8,8 +7,6 @@ from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 from collections import Counter
 
 from .models import ExamSession
-
-
 def collect_wrong_questions(user, subject=None):
     """
     Thu thập tất cả câu hỏi trả lời sai từ ExamSession.
@@ -42,25 +39,59 @@ def collect_wrong_questions(user, subject=None):
     return wrong_questions
 
 
+def _join_vietnamese_compounds(text):
+    import re
+    compound_words = [
+        "máy tính", "cơ sở dữ liệu", "cơ sở", "dữ liệu", "trí tuệ nhân tạo",
+        "trí tuệ", "nhân tạo", "mạng máy tính", "hệ điều hành", "điều hành",
+        "phần mềm", "phần cứng", "lập trình", "ngôn ngữ lập trình", "ngôn ngữ",
+        "thuật toán", "truy vấn", "truy xuất", "xử lý", "tính toán",
+        "ứng dụng", "hệ thống", "dịch vụ", "nền tảng", "giao diện",
+        "mã nguồn", "mã hóa", "giải mã", "bảo mật", "xác thực",
+        "tập tin", "thư mục", "đám mây", "điện toán", "điện toán đám mây",
+        "công cụ", "công nghệ", "kỹ thuật", "học giám sát", "thị giác máy tính",
+        "học không giám sát", "học tăng cường", "machine learning",
+        "khả năng", "lợi ích", "ưu điểm", "nhược điểm", "đặc trưng",
+        "tác vụ", "nhiệm vụ", "chức năng", "mục tiêu", "kết quả",
+        "phương pháp", "quy trình", "mô hình", "kiến trúc", "cấu trúc",
+        "quản trị", "hệ quản trị", "phân tích", "tổng hợp", "đánh giá",
+        "hiệu suất", "độ chính xác", "tối ưu", "mở rộng", "triển khai",
+        "song song", "phân tán", "phân cụm", "phân loại", "dự đoán",
+        "học máy", "huấn luyện", "tập dữ liệu",
+        "chịu lỗi", "khả năng chịu lỗi", "khả năng mở rộng",
+    ]
+    # Sắp xếp theo độ dài giảm dần để ưu tiên cụm dài hơn trước
+    compound_words.sort(key=len, reverse=True)
+
+    for cw in compound_words:
+        joined = cw.replace(" ", "_")
+        pattern = re.compile(re.escape(cw), re.IGNORECASE)
+        text = pattern.sub(joined, text)
+    return text
+
+
+def _deduplicate_keywords(keywords):
+    """
+    Loại bỏ các unigram trùng lặp khi bigram/compound tương ứng đã tồn tại trong danh sách.
+    Ví dụ: ["khả_năng", "khả", "năng", "map", "hadoop"] → ["khả_năng", "map", "hadoop"]
+    """
+    bigrams = [kw for kw in keywords if '_' in kw or ' ' in kw]
+    filtered = []
+    for kw in keywords:
+        if '_' not in kw and ' ' not in kw:
+            is_part_of_bigram = False
+            for bg in bigrams:
+                parts = bg.replace('_', ' ').split()
+                if kw.lower() in [p.lower() for p in parts]:
+                    is_part_of_bigram = True
+                    break
+            if is_part_of_bigram:
+                continue
+        filtered.append(kw)
+    return filtered
+
+
 def cluster_wrong_questions(wrong_questions, n_clusters=None):
-    """
-    Nhóm các câu sai theo chủ đề bằng TF-IDF + K-Means.
-    Tự động chọn số cluster tối ưu nếu không chỉ định.
-    
-    Returns: {
-        'clusters': [{
-            'cluster_id': int,
-            'topic_keywords': [str],        # top TF-IDF keywords
-            'questions': [wrong_question],   # câu hỏi trong cluster
-            'count': int,
-            'percentage': float,
-        }],
-        'total_wrong': int,
-        'n_clusters': int,
-        'silhouette_score': float,
-        'tfidf_feature_names': [str],
-    }
-    """
     if len(wrong_questions) < 3:
         return {
             'clusters': [],
@@ -71,22 +102,34 @@ def cluster_wrong_questions(wrong_questions, n_clusters=None):
         }
 
     # Bước 1: TF-IDF Vectorization
-    # Danh sách từ dừng kết hợp tiếng Anh và các từ phổ biến/từ đề thi tiếng Việt
-    custom_stop_words = list(ENGLISH_STOP_WORDS) + [
-        # Từ nối, đại từ cơ bản TV
-        "là", "của", "và", "trong", "các", "khi", "có", "không", "để", "với", "cho", "thì", 
-        "được", "những", "đã", "này", "đó", "tại", "vào", "ra", "làm", "sự", "như", "hay", 
-        "hoặc", "nên", "ở", "từ", "một", "bị", "bởi", "thấy", "rằng", "rất",
-        # Từ ngữ đặc thù trong đề thi trắc nghiệm (cả Anh & Việt)
+    import os
+    github_stopwords = []
+    stopwords_path = os.path.join(os.path.dirname(__file__), 'vietnamese-stopwords.txt')
+    if os.path.exists(stopwords_path):
+        with open(stopwords_path, 'r', encoding='utf-8') as f:
+            github_stopwords = [line.strip() for line in f if line.strip()]
+
+    custom_stop_words = list(ENGLISH_STOP_WORDS) + github_stopwords + [
         "câu", "hỏi", "đáp", "án", "đúng", "sai", "chọn", "phương", "nào", "sau", "đây", 
         "ý", "phát", "biểu", "mệnh", "đề", "trắc", "nghiệm", "dưới", "nhất", "điền", "trống",
-        "thế", "người", "ta", "việc", "nhận", "định", "đặc", "điểm",
+        "thế", "người", "ta", "việc", "quan", "nhận", "định", "hiểu", "nghĩa", "đặc", "điểm", "đoạn",
         "correct", "incorrect", "answer", "question", "options", "option", "choose", 
         "following", "statement", "statements", "true", "false", "blank", "best", 
-        "which", "what", "where", "when", "how", "why", "who"
-    ]
+        "which", "what", "where", "when", "how", "why", "who",
+        "pdf", "file", "nguồn", "chapter", "lấy", "theo", "tài", "liệu",
+        "nêu", "rõ", "dựa", "trên", "trích", "midterm", "practice", "exam", "lecture"]
+    import re
+    def _clean_source_metadata(text):
+        text = re.sub(r'\[Nguồn:\s*[^\]]*\]', '', text)
+        text = re.sub(r'\b\w+\.(pdf|docx|doc|txt|pptx|xlsx)\b', '', text, flags=re.IGNORECASE)
+        return text
 
-    texts = [q['question'] + ' ' + q.get('explanation', '') for q in wrong_questions]
+    texts = [
+        _join_vietnamese_compounds(
+            _clean_source_metadata(q['question'] + ' ' + q.get('explanation', ''))
+        )
+        for q in wrong_questions
+    ]
 
     vectorizer = TfidfVectorizer(
         max_features=200,
@@ -94,13 +137,14 @@ def cluster_wrong_questions(wrong_questions, n_clusters=None):
         ngram_range=(1, 2),
         min_df=1,
         max_df=0.95,
+        token_pattern=r'(?u)\b[\w_]+\b',  
     )
     tfidf_matrix = vectorizer.fit_transform(texts)
     feature_names = vectorizer.get_feature_names_out()
 
-    # Bước 2: Chọn số cluster tối ưu (Elbow method + Silhouette)
+    # Bước 2: Chọn số cluster tối ưu bằng Silhouette Score
     if n_clusters is None:
-        max_k = min(len(wrong_questions) - 1, 8)
+        max_k = min(len(wrong_questions) - 1, 5)  
         max_k = max(max_k, 2)
         best_k = 2
         best_score = -1
@@ -136,22 +180,26 @@ def cluster_wrong_questions(wrong_questions, n_clusters=None):
 
         # Top TF-IDF keywords cho cluster
         cluster_tfidf = tfidf_matrix[cluster_indices].toarray().mean(axis=0)
-        top_keyword_indices = cluster_tfidf.argsort()[-5:][::-1]
-        top_keywords = [feature_names[i] for i in top_keyword_indices if cluster_tfidf[i] > 0]
+        top_keyword_indices = cluster_tfidf.argsort()[-5:][::-1]  
+        raw_keywords = [feature_names[i] for i in top_keyword_indices if cluster_tfidf[i] > 0]
 
+        # Lọc trùng: loại unigram khi compound/bigram đã tồn tại
+        top_keywords = _deduplicate_keywords(raw_keywords)[:5]
+
+        # Thay dấu gạch dưới về dấu cách cho hiển thị
+        top_keywords = [kw.replace('_', ' ') for kw in top_keywords]
 
         clusters.append({
             'cluster_id': cluster_id,
             'topic_keywords': top_keywords,
-            'topic_name': '',  # Sẽ được Gemini điền sau
+            'topic_name': '',
             'questions': cluster_questions,
             'count': len(cluster_questions),
             'percentage': round(len(cluster_questions) / len(wrong_questions) * 100, 1),
         })
 
-    # Chỉ dùng các từ khoá TF-IDF để định dạng tên chủ đề
+    # Đặt tên cụm bằng Top 3 từ khóa TF-IDF
     for c in clusters:
-        # Lấy tối đa 3 từ khoá đầu tiên nối lại làm tên chủ đề, viết hoa chữ cái đầu
         kw_str = ", ".join(c['topic_keywords'][:3])
         c['topic_name'] = f"Chủ đề: {kw_str.capitalize()}"
 
@@ -164,8 +212,6 @@ def cluster_wrong_questions(wrong_questions, n_clusters=None):
         'n_clusters': n_clusters,
         'silhouette_score': sil_score,
     }
-
-
 def generate_weakness_report(user, subject=None):
     # Thu thập câu sai
     wrong_qs = collect_wrong_questions(user, subject)
@@ -185,6 +231,7 @@ def generate_weakness_report(user, subject=None):
             'message': result.get('message', 'Không đủ dữ liệu để phân tích.'),
             'total_wrong': result['total_wrong'],
         }
+
     # Thống kê tổng quan
     sessions = ExamSession.objects.filter(user=user, is_submitted=True)
     if subject:
@@ -407,10 +454,6 @@ TOM TAT:"""
 
 
 def summarize_document(text, num_extractive=5):
-    """
-    Hybrid Summarization: ket hop Extractive (ML) + Abstractive (AI).
-    Returns full report cho frontend.
-    """
     if not text or len(text.strip()) < 50:
         return {
             'status': 'error',
