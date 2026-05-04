@@ -12,18 +12,16 @@ from pypdf import PdfReader
 
 load_dotenv()
 
-# ─────────────────────────────────────────────────────────
 # Khởi tạo AI Client & Embeddings
-# ─────────────────────────────────────────────────────────
-client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
-MODEL_NAME = os.getenv("MODEL_NAME", "gemini-2.0-flash-lite")
+# Strip whitespace/tab ký tự lạ có thể bị thêm vào khi deploy (Railway, Docker...)
+_api_key = os.getenv("GOOGLE_API_KEY", "").strip()
+os.environ["GOOGLE_API_KEY"] = _api_key  # Ghi đè lại env sạch cho LangChain
+
+client = genai.Client(api_key=_api_key)
+MODEL_NAME = os.getenv("MODEL_NAME", "gemini-2.0-flash-lite").strip()
 
 embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
 persist_directory = os.path.join(settings.BASE_DIR, "data", "chroma_db")
-
-# ─────────────────────────────────────────────────────────
-# SYSTEM PROMPT – Prompt Engineering nâng cao
-# ─────────────────────────────────────────────────────────
 SYSTEM_PROMPT = """Bạn là EduFlow AI – trợ lý học tập cho sinh viên.
 
 QUY TẮC QUAN TRỌNG:
@@ -35,10 +33,6 @@ QUY TẮC QUAN TRỌNG:
 """
 
 
-# ─────────────────────────────────────────────────────────
-# OCR & TEXT EXTRACTION
-# ─────────────────────────────────────────────────────────
-
 def extract_text(file_path):
     """Trích xuất text từ file ảnh hoặc PDF."""
     ext = os.path.splitext(file_path)[1].lower()
@@ -46,7 +40,6 @@ def extract_text(file_path):
         if ext in ['.jpg', '.jpeg', '.png', '.bmp']:
             return pytesseract.image_to_string(Image.open(file_path), lang='vie+eng')
         elif ext == '.pdf':
-            # Ưu tiên extract text trực tiếp
             reader = PdfReader(file_path)
             text = ""
             for page in reader.pages:
@@ -62,15 +55,11 @@ def extract_text(file_path):
     except Exception as e:
         print(f"Extraction Error: {e}")
     return ""
-# ─────────────────────────────────────────────────────────
 # RAG – INDEX & RETRIEVE
-# ─────────────────────────────────────────────────────────
 def index_document(text, metadata):
-    """Chia nhỏ văn bản và lưu vào ChromaDB vector store."""
     if not text.strip():
         print("Empty text, skipping indexing.")
         return
-    
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     chunks = text_splitter.split_text(text)
     
@@ -80,13 +69,11 @@ def index_document(text, metadata):
     if 'subject' in metadata:
         metadata['subject'] = metadata['subject'].lower()
 
-    # Fix Lỗi 429 Quota Exceeded API:
     # Gói Free Tier Google Gemini chặn 100 requests/phút. 
     # Ta sẽ chia file dài thành từng đợt (batch) 20 khối/lần đưa qua màng lọc và "ngủ" 15 giây.
     import time
     batch_size = 20
     total_indexed = 0
-
     print(f"Bắt đầu xử lý Text dài: Tổng cộng {len(chunks)} chunks.")
     
     for i in range(0, len(chunks), batch_size):
@@ -101,20 +88,20 @@ def index_document(text, metadata):
                 metadatas=batch_metadatas
             )
             total_indexed += len(batch_chunks)
-            print(f"🔄 Đã nhét thành công đợt {i//batch_size + 1} ({len(batch_chunks)} chunks).")
+            print(f" Đã nhét thành công đợt {i//batch_size + 1} ({len(batch_chunks)} chunks).")
             
             # Nếu vẫn còn đợt tiếp theo thì nghỉ ngơi 15 giây để bypass rào cản của Google
             if i + batch_size < len(chunks):
-                print(f"⏳ Sleeping 15s để làm mát API Google tránh lỗi 429...")
+                print(f" Sleeping 15s để làm mát API Google tránh lỗi 429...")
                 time.sleep(15)
                 
         except Exception as e:
-            print(f"❌ Lỗi ở lô {i//batch_size + 1}: {e}")
-            print(f"⏳ Bị quá tải, ép ngủ 30s sau đó sẽ tiếp tục các đợt tiếp theo...")
+            print(f" Lỗi ở lô {i//batch_size + 1}: {e}")
+            print(f" Bị quá tải, ép ngủ 30s sau đó sẽ tiếp tục các đợt tiếp theo...")
             time.sleep(30)
             continue
 
-    print(f"✅ Hoàn thành: Đã lưu {total_indexed}/{len(chunks)} chunks cho môn: {metadata.get('subject')}")
+    print(f" Hoàn thành: Đã lưu {total_indexed}/{len(chunks)} chunks cho môn: {metadata.get('subject')}")
 
 
 def retrieve_context(subject_name: str, user_id: str, query: str) -> str:
@@ -136,7 +123,7 @@ def retrieve_context(subject_name: str, user_id: str, query: str) -> str:
                         {"subject": subject_lower}
                     ]
                 },
-                "k": 4 # Tăng lên 4 chunks để AI có nhiều dữ liệu hơn
+                "k": 4 
             }
         ).invoke(query)
         
@@ -190,9 +177,7 @@ def retrieve_exam_context(subject_name: str, user_id: str, k: int = 8) -> tuple[
     except Exception as e:
         print(f"Exam Context DB Error (skipped): {e}")
     return "", []
-# ─────────────────────────────────────────────────────────
-# LLM GENERATION với Prompt Engineering nâng cao
-# ─────────────────────────────────────────────────────────
+
 def get_answer(subject: str, query: str, history: str = "", user_id: str = "") -> str:
     """
     Sinh câu trả lời từ Gemini AI với:
@@ -209,7 +194,7 @@ def get_answer(subject: str, query: str, history: str = "", user_id: str = "") -
 
         # Context từ tài liệu (nếu có)
         if context:
-            prompt_parts.append(f"📚 TÀI LIỆU CỦA SINH VIÊN (đã upload cho môn {subject}):\n{context}\n\n")
+            prompt_parts.append(f" TÀI LIỆU CỦA SINH VIÊN (đã upload cho môn {subject}):\n{context}\n\n")
             prompt_parts.append("ƯU TIÊN trả lời dựa trên tài liệu trên. Khi trích dẫn, ghi tự nhiên như 'Theo slide bài giảng,...' hoặc 'Trong tài liệu môn học,...'. Nếu tài liệu không đủ, bổ sung từ kiến thức chung và ghi rõ nguồn tham khảo uy tín.\n\n")
         else:
             prompt_parts.append(f"[Lưu ý: Chưa có tài liệu cho môn {subject}. Trả lời dựa trên kiến thức chung.]\n\n")
@@ -266,12 +251,8 @@ def generate_mock_exam(subject: str) -> str:
 
 Định dạng đề thi rõ ràng, có đánh số câu hỏi."""
     return get_answer(subject, exam_prompt)
-
-
 import json as _json
 import re as _re
-
-
 def parse_exam_from_text(raw_text: str, subject: str) -> list:
     """
     Preprocessing layer: Dùng LLM để chuẩn hóa đề thi từ text thô (bất kỳ định dạng nào)
