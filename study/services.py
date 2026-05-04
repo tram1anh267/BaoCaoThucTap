@@ -18,7 +18,7 @@ _api_key = os.getenv("GOOGLE_API_KEY", "").strip()
 os.environ["GOOGLE_API_KEY"] = _api_key  # Ghi đè lại env sạch cho LangChain
 
 client = genai.Client(api_key=_api_key)
-MODEL_NAME = os.getenv("MODEL_NAME", "gemini-2.0-flash-lite").strip()
+MODEL_NAME = (os.getenv("MODEL_NAME", "").strip()) or "gemini-2.0-flash-lite"
 
 embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
 persist_directory = os.path.join(settings.BASE_DIR, "data", "chroma_db")
